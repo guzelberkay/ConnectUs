@@ -24,4 +24,9 @@ public class EndPoints {
     public static final String PROJECT = ROOT + "/project";
     public static final String SAVE = "/save";
 
+    //AbouthUs
+    public static final String ABOUTHUS = ROOT + "/aboutus";
+
+    ABOUTHUS
+
 }
