@@ -3,13 +3,15 @@ package com.connectus.controller;
 import com.connectus.dto.request.ProjectDeleteRequestDTO;
 import com.connectus.dto.request.ProjectSaveRequestDTO;
 import com.connectus.dto.request.ProjectUpdateRequestDTO;
-import com.connectus.dto.request.RegisterRequestDTO;
 import com.connectus.dto.response.ResponseDTO;
+import com.connectus.entity.Project;
 import com.connectus.services.ProjectService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 import static com.connectus.constants.EndPoints.*;
 
@@ -54,10 +56,20 @@ public class ProjectController {
     )
     public ResponseEntity<ResponseDTO<Boolean>> update(@RequestBody ProjectUpdateRequestDTO dto) {
         return ResponseEntity.ok(ResponseDTO.<Boolean>builder()
-                .data(projectService.update(dto)) 
+                .data(projectService.update(dto))
                 .code(200)
                 .message("Project updated successfully")
                 .build());
+    }
+
+    @GetMapping(FINDALL)
+    @Operation(
+            summary = "Retrieve All Projects",
+            description = "Returns a list of all projects. This endpoint fetches all the projects stored in the system and returns them as a list of `Project` objects."
+    )
+    public ResponseEntity<List<Project>> findAll() {
+        List<Project> projects = projectService.findAll();
+        return ResponseEntity.ok(projects);
     }
 
 

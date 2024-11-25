@@ -5,15 +5,15 @@ import com.connectus.dto.request.ProjectSaveRequestDTO;
 import com.connectus.dto.request.ProjectUpdateRequestDTO;
 import com.connectus.entity.Auth;
 import com.connectus.entity.Project;
-import com.connectus.exception.AuthServiceException;
+import com.connectus.exception.GeneralException;
 import com.connectus.exception.ErrorType;
-import com.connectus.exception.ProjectServiceException;
 import com.connectus.repository.AuthRepository;
 import com.connectus.repository.ProjectRepository;
 import com.connectus.utility.JwtTokenManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -28,7 +28,7 @@ public class ProjectService {
         Long authId = extractAuthIdFromToken(dto.token());
 
         Auth auth = authRepository.findById(authId)
-                .orElseThrow(() -> new AuthServiceException(ErrorType.AUTH_NOT_FOUND));
+                .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
 
         Project project = Project.builder()
                 .title(dto.title())
@@ -45,11 +45,11 @@ public class ProjectService {
 
         Long authId = extractAuthIdFromToken(dto.token());
         Auth auth = authRepository.findById(authId)
-                .orElseThrow(() -> new AuthServiceException(ErrorType.AUTH_NOT_FOUND));
+                .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
 
 
         Project project = projectRepository.findById(dto.projectId())
-                .orElseThrow(() -> new ProjectServiceException(ErrorType.PROJECT_NOT_FOUND));
+                .orElseThrow(() -> new GeneralException(ErrorType.PROJECT_NOT_FOUND));
 
 
         projectRepository.delete(project);
@@ -60,11 +60,11 @@ public class ProjectService {
 
         Long authId = extractAuthIdFromToken(dto.token());
         Auth auth = authRepository.findById(authId)
-                .orElseThrow(() -> new AuthServiceException(ErrorType.AUTH_NOT_FOUND));
+                .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
 
 
         Project project = projectRepository.findById(dto.projectId())
-                .orElseThrow(() -> new ProjectServiceException(ErrorType.PROJECT_NOT_FOUND));
+                .orElseThrow(() -> new GeneralException(ErrorType.PROJECT_NOT_FOUND));
 
 
         if (dto.title() != null) {
@@ -80,6 +80,11 @@ public class ProjectService {
 
         return true;
     }
+
+    public List<Project> findAll() {
+        return projectRepository.findAll();
+    }
+
     private Long extractAuthIdFromToken(String token) {
         Optional<Long> authIdOptional = jwtTokenManager.getAuthIdFromToken(token);
         if (authIdOptional.isPresent()) {

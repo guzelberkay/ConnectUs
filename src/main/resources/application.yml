@@ -1,2 +1,21 @@
+server:
+  port: 9090
 
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ConnectUsDB
+    username: postgres
+    password: 1234
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
 
+connectus:
+  secret:
+    secret-key: ${JAVA_14_SECRET_KEY:defaultSecretKey}
+    issuer: ${JAVA_14_ISSUER:defaultIssuer}

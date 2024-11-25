@@ -1,12 +1,11 @@
 package com.connectus.services;
 
-import com.connectus.dto.request.AbouthUsRequestDTO;
-import com.connectus.entity.AbouthUs;
+import com.connectus.dto.request.AboutUsRequestDTO;
+import com.connectus.entity.AboutUs;
 import com.connectus.entity.Auth;
-import com.connectus.exception.AuthServiceException;
+import com.connectus.exception.GeneralException;
 import com.connectus.exception.ErrorType;
-import com.connectus.exception.ProjectServiceException;
-import com.connectus.repository.AbouthUsRepository;
+import com.connectus.repository.AboutUsRepository;
 import com.connectus.repository.AuthRepository;
 import com.connectus.utility.JwtTokenManager;
 import lombok.RequiredArgsConstructor;
@@ -16,20 +15,20 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class AbouthUsService {
+public class AboutUsService {
     private final AuthRepository authRepository;
-    private final AbouthUsRepository aboutUsRepository;
+    private final AboutUsRepository aboutUsRepository;
     private final JwtTokenManager jwtTokenManager;
 
 
-    public Boolean save(AbouthUsRequestDTO dto) {
+    public Boolean save(AboutUsRequestDTO dto) {
         Long authId = extractAuthIdFromToken(dto.token());
 
 
         Auth auth = authRepository.findById(authId)
-                .orElseThrow(() -> new AuthServiceException(ErrorType.AUTH_NOT_FOUND));
+                .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
 
-        AbouthUs aboutUs = AbouthUs.builder()
+        AboutUs aboutUs = AboutUs.builder()
                 .content(dto.content())
                 .build();
 
@@ -37,41 +36,44 @@ public class AbouthUsService {
         return true;
     }
 
-    public Boolean delete(AbouthUsRequestDTO dto) {
+    public Boolean delete(AboutUsRequestDTO dto) {
 
         Long authId = extractAuthIdFromToken(dto.token());
         Auth auth = authRepository.findById(authId)
-                .orElseThrow(() -> new AuthServiceException(ErrorType.AUTH_NOT_FOUND));
+                .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
 
 
-        AbouthUs aboutUs = aboutUsRepository.findAll().stream()
+        AboutUs aboutUs = aboutUsRepository.findAll().stream()
                 .findFirst()
-                .orElseThrow(() -> new ProjectServiceException(ErrorType.PROJECT_NOT_FOUND));
+                .orElseThrow(() -> new GeneralException(ErrorType.PROJECT_NOT_FOUND));
 
         aboutUsRepository.delete(aboutUs);
         return true;
     }
 
-    public Boolean update(AbouthUsRequestDTO dto) {
+    public Boolean update(AboutUsRequestDTO dto) {
         Long authId = extractAuthIdFromToken(dto.token());
 
 
         Auth auth = authRepository.findById(authId)
-                .orElseThrow(() -> new AuthServiceException(ErrorType.AUTH_NOT_FOUND));
+                .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
 
 
-        AbouthUs abouthUs = aboutUsRepository.findFirstByOrderByIdAsc()
-                .orElseThrow(() -> new ProjectServiceException(ErrorType.PROJECT_NOT_FOUND));
+        AboutUs aboutUs = aboutUsRepository.findFirstByOrderByIdAsc()
+                .orElseThrow(() -> new RuntimeException("Hakkımızda bilgisi bulunamadı!"));
 
 
         if (dto.content() != null) {
-            abouthUs.setContent(dto.content());
+            aboutUs.setContent(dto.content());
         }
 
-        aboutUsRepository.save(abouthUs);
+        aboutUsRepository.save(aboutUs);
         return true;
     }
-
+    public AboutUs find() {
+        return aboutUsRepository.findFirstByOrderByIdAsc()
+                .orElseThrow(() -> new RuntimeException("Hakkımızda bilgisi bulunamadı!"));
+    }
 
 
 

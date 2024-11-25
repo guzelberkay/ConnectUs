@@ -6,7 +6,7 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.connectus.exception.AuthServiceException;
+import com.connectus.exception.GeneralException;
 import com.connectus.exception.ErrorType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -19,11 +19,12 @@ import static com.connectus.exception.ErrorType.TOKEN_VERIFY_FAILED;
 
 @Service
 public class JwtTokenManager {
-    @Value("${auth.secret.secret-key}")
-    String secretKey;
-    @Value("${auth.secret.issuer}")
-    String issuer;
-    private final Long EXDATE = 1000L * 60 * 60 ;
+    @Value("${connectus.secret.secret-key}")
+    private String secretKey;
+
+    @Value("${connectus.secret.issuer}")
+    private String issuer;
+    private final Long EXDATE = 1000L * 60 * 60;
 
     public Optional<String> createToken (Long authId){
         String token;
@@ -67,9 +68,9 @@ public class JwtTokenManager {
             }
 
         } catch (IllegalArgumentException e) {
-            throw new AuthServiceException(TOKEN_FORMAT_NOT_ACCEPTABLE);
+            throw new GeneralException(TOKEN_FORMAT_NOT_ACCEPTABLE);
         } catch (JWTVerificationException e) {
-            throw new AuthServiceException(TOKEN_VERIFY_FAILED);
+            throw new GeneralException(TOKEN_VERIFY_FAILED);
         }
     }
 
@@ -80,7 +81,7 @@ public class JwtTokenManager {
             DecodedJWT decodedJWT= verifier.verify(token);
 
             if (decodedJWT==null){
-                throw new AuthServiceException(ErrorType.INVALID_TOKEN);
+                throw new GeneralException(ErrorType.INVALID_TOKEN);
             }
 
             Long id=decodedJWT.getClaim("authId").asLong();
@@ -88,7 +89,7 @@ public class JwtTokenManager {
 
         }catch (Exception e){
             System.out.println(e.getMessage());
-            throw new AuthServiceException(ErrorType.INVALID_TOKEN);
+            throw new GeneralException(ErrorType.INVALID_TOKEN);
         }
     }
     //  Şifre Sıfırlama İçin Email İle Token Oluşturma
@@ -115,13 +116,13 @@ public class JwtTokenManager {
             DecodedJWT decodedJWT = verifier.verify(token);
 
             if (decodedJWT == null) {
-                throw new AuthServiceException(ErrorType.INVALID_TOKEN);
+                throw new GeneralException(ErrorType.INVALID_TOKEN);
             }
 
             String email = decodedJWT.getClaim("email").asString(); // Token'dan email bilgisi çıkarılıyor
             return Optional.ofNullable(email);
         } catch (Exception e) {
-            throw new AuthServiceException(ErrorType.INVALID_TOKEN);
+            throw new GeneralException(ErrorType.INVALID_TOKEN);
         }
     }
 

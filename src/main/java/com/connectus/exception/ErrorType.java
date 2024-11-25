@@ -34,7 +34,9 @@ public enum ErrorType {
     TOKEN_VERIFY_FAILED(1021,"token verify failed", HttpStatus.SERVICE_UNAVAILABLE),
     AUTH_NOT_FOUND(1022, "AUTH not found. Please try again.", HttpStatus.NOT_FOUND),
     PROJECT_NOT_FOUND(1023, "Project not found. Please try again.", HttpStatus.NOT_FOUND),
+    COMMENT_NOT_FOUND(1024, "Comment not found. Please try again.", HttpStatus.NOT_FOUND),
 
+    CONTACT_NOT_FOUND(1024, "Comment not found. Please try again.", HttpStatus.NOT_FOUND),
 
     ;
 

@@ -7,7 +7,7 @@ import com.connectus.utility.PasswordEncoder;
 import com.connectus.dto.request.*;
 import com.connectus.entity.Auth;
 import com.connectus.entity.enums.EStatus;
-import com.connectus.exception.AuthServiceException;
+import com.connectus.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,41 +42,41 @@ public class AuthService {
 
     private void checkEmailExist(String email) {
         if (authRepository.existsByEmail(email)) {
-            throw new AuthServiceException(EMAIL_ALREADY_TAKEN);
+            throw new GeneralException(EMAIL_ALREADY_TAKEN);
         }
     }
 
     private void checkPasswordMatch(String password, String rePassword) {
         if (!password.equals(rePassword)) {
-            throw new AuthServiceException(PASSWORD_MISMATCH);
+            throw new GeneralException(PASSWORD_MISMATCH);
         }
     }
 
     public String login(LoginRequestDTO dto) {
         Auth auth = authRepository.findOptionalByEmail(dto.email())
-                .orElseThrow(() -> new AuthServiceException(EMAIL_OR_PASSWORD_WRONG));
+                .orElseThrow(() -> new GeneralException(EMAIL_OR_PASSWORD_WRONG));
 
         if (!auth.getStatus().equals(EStatus.ACTIVE)) {
-            throw new AuthServiceException(USER_IS_NOT_ACTIVE);
+            throw new GeneralException(USER_IS_NOT_ACTIVE);
         }
 
         if (!passwordEncoder.bCryptPasswordEncoder().matches(dto.password(), auth.getPassword())) {
-            throw new AuthServiceException(EMAIL_OR_PASSWORD_WRONG);
+            throw new GeneralException(EMAIL_OR_PASSWORD_WRONG);
         }
 
         String token = jwtTokenManager.createToken(auth.getId())
-                .orElseThrow(() -> new AuthServiceException(TOKEN_CREATION_FAILED));
+                .orElseThrow(() -> new GeneralException(TOKEN_CREATION_FAILED));
         return token;
     }
 
     public Boolean verifyAccount(String token) {
         Long authId = jwtTokenManager.getIdFromToken(token)
-                .orElseThrow(() -> new AuthServiceException(INVALID_TOKEN));
+                .orElseThrow(() -> new GeneralException(INVALID_TOKEN));
         Auth auth = authRepository.findById(authId)
-                .orElseThrow(() -> new AuthServiceException(USER_NOT_FOUND));
+                .orElseThrow(() -> new GeneralException(USER_NOT_FOUND));
 
         if (auth.getStatus().equals(EStatus.ACTIVE)) {
-            throw new AuthServiceException(USER_IS_ACTIVE);
+            throw new GeneralException(USER_IS_ACTIVE);
         }
 
         auth.setStatus(EStatus.ACTIVE);
@@ -87,20 +87,20 @@ public class AuthService {
 
     public Boolean deleteAuth(Long authId) {
         Auth auth = authRepository.findById(authId)
-                .orElseThrow(() -> new AuthServiceException(USER_NOT_FOUND));
+                .orElseThrow(() -> new GeneralException(USER_NOT_FOUND));
         if (auth.getStatus().equals(EStatus.DELETED)) {
-            throw new AuthServiceException(USER_ALREADY_DELETED);
+            throw new GeneralException(USER_ALREADY_DELETED);
         }
         auth.setStatus(EStatus.DELETED);
         authRepository.save(auth);
         return true;
     }
     public Boolean resetPassword(ResetPasswordRequestDTO dto) {
-        String email = jwtTokenManager.getEmailFromToken(dto.token()).orElseThrow(() -> new AuthServiceException(INVALID_TOKEN));
+        String email = jwtTokenManager.getEmailFromToken(dto.token()).orElseThrow(() -> new GeneralException(INVALID_TOKEN));
         Auth auth = authRepository.findOptionalByEmail(email)
-                .orElseThrow(() -> new AuthServiceException(USER_NOT_FOUND));
+                .orElseThrow(() -> new GeneralException(USER_NOT_FOUND));
         if (!dto.newPassword().equals(dto.rePassword())) {
-            throw new AuthServiceException(PASSWORD_MISMATCH);
+            throw new GeneralException(PASSWORD_MISMATCH);
         }
 
         String encodedPassword = passwordEncoder.bCryptPasswordEncoder().encode(dto.newPassword());
@@ -110,24 +110,24 @@ public class AuthService {
     }
     public Boolean loginProfileManagement(LoginProfileManagementDTO dto,String token) {
         String jwtToken = token.replace("Bearer ", "");
-        Long authId = jwtTokenManager.getIdFromToken(jwtToken).orElseThrow(() -> new AuthServiceException(INVALID_TOKEN));
-        Auth auth = authRepository.findById(authId).orElseThrow(() -> new AuthServiceException(USER_NOT_FOUND));
+        Long authId = jwtTokenManager.getIdFromToken(jwtToken).orElseThrow(() -> new GeneralException(INVALID_TOKEN));
+        Auth auth = authRepository.findById(authId).orElseThrow(() -> new GeneralException(USER_NOT_FOUND));
 
         if (!passwordEncoder.bCryptPasswordEncoder().matches(dto.password(), auth.getPassword())) {
-            throw new AuthServiceException(PASSWORD_WRONG);
+            throw new GeneralException(PASSWORD_WRONG);
         }
 
         return true;
     }
     public Boolean changeMyPassword(ChangeMyPasswordRequestDTO dto, String token) {
         String jwtToken = token.replace("Bearer ", "");
-        Long authId = jwtTokenManager.getIdFromToken(jwtToken).orElseThrow(() -> new AuthServiceException(INVALID_TOKEN));
+        Long authId = jwtTokenManager.getIdFromToken(jwtToken).orElseThrow(() -> new GeneralException(INVALID_TOKEN));
         if(!authId.equals(dto.authId())){
-            throw new AuthServiceException(INVALID_TOKEN);
+            throw new GeneralException(INVALID_TOKEN);
         }
-        Auth auth = authRepository.findById(authId).orElseThrow(() -> new AuthServiceException(USER_NOT_FOUND));
+        Auth auth = authRepository.findById(authId).orElseThrow(() -> new GeneralException(USER_NOT_FOUND));
         if(!dto.newPassword().equals(dto.newConfirmPassword())){
-            throw new AuthServiceException(PASSWORD_MISMATCH);
+            throw new GeneralException(PASSWORD_MISMATCH);
         }
 
         auth.setPassword(passwordEncoder.bCryptPasswordEncoder().encode(dto.newPassword()));
@@ -138,12 +138,12 @@ public class AuthService {
 
     public Boolean forgetPassword(String email) {
         Auth auth = authRepository.findOptionalByEmail(email)
-                .orElseThrow(() -> new AuthServiceException(USER_NOT_FOUND));
+                .orElseThrow(() -> new GeneralException(USER_NOT_FOUND));
 
         if (auth.getStatus() == EStatus.ACTIVE) {
             return true;
         } else {
-            throw new AuthServiceException(USER_IS_NOT_ACTIVE);
+            throw new GeneralException(USER_IS_NOT_ACTIVE);
         }
     }
 
@@ -167,13 +167,13 @@ public class AuthService {
 
     public void changePasswordByAdmin(ChangePasswordFromUserModel changePasswordFromUserModel) {
         Auth auth = authRepository.findById(changePasswordFromUserModel.getAuthId())
-                .orElseThrow(() -> new AuthServiceException(USER_NOT_FOUND));
+                .orElseThrow(() -> new GeneralException(USER_NOT_FOUND));
         auth.setPassword(passwordEncoder.bCryptPasswordEncoder().encode(changePasswordFromUserModel.getNewPassword()));
         authRepository.save(auth);
     }
 
     public void updateAuthStatus(UpdateStatusModel updateStatusModel){
-        Auth auth = authRepository.findById(updateStatusModel.getAuthId()).orElseThrow(() -> new AuthServiceException(USER_NOT_FOUND));
+        Auth auth = authRepository.findById(updateStatusModel.getAuthId()).orElseThrow(() -> new GeneralException(USER_NOT_FOUND));
         auth.setStatus(updateStatusModel.getStatus());
         authRepository.save(auth);
     }

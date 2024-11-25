@@ -24,9 +24,21 @@ public class EndPoints {
     public static final String PROJECT = ROOT + "/project";
     public static final String SAVE = "/save";
 
-    //AbouthUs
-    public static final String ABOUTHUS = ROOT + "/aboutus";
+    //AboutUs
+    public static final String ABOUTUS = ROOT + "/aboutus";
 
-    ABOUTHUS
+    //Comment
+    public static final String COMMENT = ROOT + "/comment";
+    public static final String FINDALL = ROOT + "/findall";
+    public static final String FIND_ALL_BY_PROJECT_ID = ROOT + "/find-all-by-project-id";
+
+    //Contact
+    public static final String CONTACT = ROOT + "/contact";
+
+    //Services
+    public static final String SERVICES = ROOT + "/services";
+
+
+
 
 }

@@ -34,9 +34,9 @@ public class GlobalExceptionHandler {
      * ilgili sınıf hata fırlatırsa onu yakalar.
      *
      */
-    @ExceptionHandler(AuthServiceException.class)
+    @ExceptionHandler(GeneralException.class)
     @ResponseBody
-    public ResponseEntity<ResponseDTO> handlerSatisException(AuthServiceException satisException){
+    public ResponseEntity<ResponseDTO> handlerSatisException(GeneralException satisException){
         return  new ResponseEntity<>(createMessage(satisException.getErrorType(),satisException), satisException.getErrorType().getHttpStatus());
     }
 
