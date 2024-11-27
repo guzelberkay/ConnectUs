@@ -38,6 +38,21 @@ public class CommentController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping(APPROVE)
+    @Operation(
+            summary = "Approve a comment",
+            description = "Approves a comment that is in 'PENDING' status."
+    )
+    public ResponseEntity<ResponseDTO<Boolean>> approveComment(@PathVariable Long commentId) {
+        boolean isApproved = commentService.approveComment(commentId);
+        ResponseDTO<Boolean> response = ResponseDTO.<Boolean>builder()
+                .data(isApproved)
+                .code(200)
+                .message("The comment was approved successfully.")
+                .build();
+        return ResponseEntity.ok(response);
+    }
+
     @DeleteMapping(DELETE)
     @Operation(
             summary = "Comment deleting process",

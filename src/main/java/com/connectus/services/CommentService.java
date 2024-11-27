@@ -5,6 +5,7 @@ import com.connectus.dto.request.CommentSaveRequestDTO;
 import com.connectus.dto.response.CommentResponseDTO;
 import com.connectus.entity.Auth;
 import com.connectus.entity.Comment;
+import com.connectus.entity.enums.EStatus;
 import com.connectus.exception.GeneralException;
 import com.connectus.exception.ErrorType;
 import com.connectus.repository.AuthRepository;
@@ -40,6 +41,21 @@ public class CommentService {
         return true;
     }
 
+    public Boolean approveComment(Long commentId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new GeneralException(ErrorType.COMMENT_NOT_FOUND));
+
+        if (comment.getStatus() == EStatus.PENDING) {
+            comment.setStatus(EStatus.ACTIVE);
+            commentRepository.save(comment);
+            return true;
+        } else {
+            throw new GeneralException(ErrorType.COMMENT_ALREADY_APPROVED_OR_REJECTED);
+        }
+    }
+
+
+
     public Boolean delete(CommentDeleteRequestDTO dto) {
         Long authId = extractAuthIdFromToken(dto.token());
         Auth auth = authRepository.findById(authId)
@@ -73,7 +89,7 @@ public class CommentService {
     }
 
     public List<CommentResponseDTO> getCommentsByProjectId(Long projectId) {
-        List<Comment> comments = commentRepository.findByProjectId(projectId);
+        List<Comment> comments = commentRepository.findByProjectIdAndStatus(projectId, EStatus.ACTIVE);
 
         return comments.stream()
                 .map(comment -> new CommentResponseDTO(

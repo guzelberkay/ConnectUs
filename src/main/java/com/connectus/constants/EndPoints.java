@@ -31,6 +31,7 @@ public class EndPoints {
     public static final String COMMENT = ROOT + "/comment";
     public static final String FINDALL = ROOT + "/findall";
     public static final String FIND_ALL_BY_PROJECT_ID = ROOT + "/find-all-by-project-id";
+    public static final String APPROVE = ROOT + "/approve";
 
     //Contact
     public static final String CONTACT = ROOT + "/contact";
@@ -39,6 +40,8 @@ public class EndPoints {
     public static final String SERVICES = ROOT + "/services";
 
 
+    // OurService
+    public static final String OURSERVICES = ROOT + "/ourservice";
 
 
 }

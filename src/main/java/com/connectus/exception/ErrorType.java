@@ -36,7 +36,10 @@ public enum ErrorType {
     PROJECT_NOT_FOUND(1023, "Project not found. Please try again.", HttpStatus.NOT_FOUND),
     COMMENT_NOT_FOUND(1024, "Comment not found. Please try again.", HttpStatus.NOT_FOUND),
 
-    CONTACT_NOT_FOUND(1024, "Comment not found. Please try again.", HttpStatus.NOT_FOUND),
+    CONTACT_NOT_FOUND(1025, "Comment not found. Please try again.", HttpStatus.NOT_FOUND),
+
+    COMMENT_ALREADY_APPROVED_OR_REJECTED(1026, "The comment has already been approved or rejected.", HttpStatus.BAD_REQUEST),
+    OURSERVICES_NOT_FOUND(1027, "OurService not found. Please try again.", HttpStatus.NOT_FOUND)
 
     ;
 

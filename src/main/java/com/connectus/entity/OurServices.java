@@ -13,8 +13,8 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @Data
 @Entity
-@Table(name = "tblproject")
-public class Project {
+@Table(name = "tblourservices")
+public class OurServices {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -22,5 +22,4 @@ public class Project {
     private String photo;
     private String title;
     private String description;
-
 }
