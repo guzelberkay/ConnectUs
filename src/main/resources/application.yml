@@ -7,6 +7,7 @@ spring:
     username: root
     password: 1234
     driver-class-name: com.mysql.cj.jdbc.Driver
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -14,6 +15,20 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: java.teamworks@gmail.com
+    password: fdzw xckg crim hjvu
+    protocol: smtp
+    tls: true
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 connectus:
   secret:

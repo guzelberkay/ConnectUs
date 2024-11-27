@@ -25,8 +25,4 @@ public class Auth {
 
     private String password;
 
-    @Builder.Default
-    @Enumerated(EnumType.STRING)
-    private EStatus status = EStatus.PENDING;
-
 }
