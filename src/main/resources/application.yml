@@ -7,14 +7,20 @@ spring:
     username: root
     password: 1234
     driver-class-name: com.mysql.cj.jdbc.Driver
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 5GB
+      max-request-size: 5GB
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: true
     properties:
       hibernate:
         format_sql: true
+
   mail:
     host: smtp.gmail.com
     port: 587
@@ -34,3 +40,13 @@ connectus:
   secret:
     secret-key: ${JAVA_14_SECRET_KEY:defaultSecretKey}
     issuer: ${JAVA_14_ISSUER:defaultIssuer}
+
+minio:
+  url: http://localhost:9000
+  access-key: user
+  secret-key: password
+  bucket-name: business-bucket
+  secure: false
+
+
+

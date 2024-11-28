@@ -1,0 +1,13 @@
+version: '3'
+services:
+  hk-s3:
+    image: minio/minio  # MinIO'nun resmi Docker imajı
+    ports:
+      - "9000:9000"  # MinIO API portu
+      - "9001:9001"  # Konsol portu (Opsiyonel, sadece konsol erişimi isteniyorsa)
+    environment:
+      MINIO_ROOT_USER: user  # MinIO admin kullanıcı adı
+      MINIO_ROOT_PASSWORD: password  # MinIO admin şifresi
+    command: server /data --console-address ":9001"  # Web konsolunun portu (9001)
+    volumes:
+      - /path/to/data:/data  # MinIO verisi için kalıcı bir yerel dosya yolu belirtmek

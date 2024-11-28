@@ -39,7 +39,12 @@ public enum ErrorType {
     CONTACT_NOT_FOUND(1025, "Comment not found. Please try again.", HttpStatus.NOT_FOUND),
 
     COMMENT_ALREADY_APPROVED_OR_REJECTED(1026, "The comment has already been approved or rejected.", HttpStatus.BAD_REQUEST),
-    OURSERVICES_NOT_FOUND(1027, "OurService not found. Please try again.", HttpStatus.NOT_FOUND)
+    OURSERVICES_NOT_FOUND(1027, "OurService not found. Please try again.", HttpStatus.NOT_FOUND),
+    PHOTO_UPLOAD_FAILED(1028, "Photo upload failed", HttpStatus.NOT_FOUND),
+    PHOTO_DELETE_FAILED(1029, "Failed to delete photo from MinIO:", HttpStatus.NOT_FOUND),
+    PHOTO_UPDATE_FAILED(1030, "Failed to update photo", HttpStatus.NOT_FOUND),
+
+
 
     ;
 

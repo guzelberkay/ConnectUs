@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -21,15 +22,23 @@ public class OurServicesController {
     private final OurServicesService ourServicesService;
 
     @PostMapping(SAVE)
-    @Operation(summary = "Save a new services",
-            description = "This method is used to register a new services in the system. Services details must be provided in the request body.")
-    public ResponseEntity<ResponseDTO<Boolean>> save(@RequestBody OurServicesSaveRequestDTO dto){
+    @Operation(summary = "Save a new service",
+            description = "This method is used to register a new service in the system. Service details must be provided in the request body.")
+    public ResponseEntity<ResponseDTO<Boolean>> save(
+            @RequestPart("photo") MultipartFile photo,
+            @RequestPart("title") String title,
+            @RequestPart("description") String description,
+            @RequestPart("token") String token) {
+
+        OurServicesSaveRequestDTO dto = new OurServicesSaveRequestDTO(photo, title, description, token);
+
         return ResponseEntity.ok(ResponseDTO.<Boolean>builder()
                 .data(ourServicesService.save(dto))
                 .code(200)
-                .message("Succesfully registered")
+                .message("Successfully registered")
                 .build());
     }
+
 
     @DeleteMapping(DELETE)
     @Operation(
@@ -69,5 +78,20 @@ public class OurServicesController {
         List<OurServices> ourServices = ourServicesService.findAll();
         return ResponseEntity.ok(ourServices);
     }
+
+    @GetMapping("/get-user-info")
+    public ResponseEntity<ResponseDTO<String>> getUserInfo(@RequestParam Long authId) {
+        // authId kullanarak veriyi çekme işlemi yapılır.
+        String userInfo = ourServicesService.getUserFromToken(authId);
+
+        return ResponseEntity.ok(ResponseDTO.<String>builder()
+                .data(userInfo)  // getUserFromToken metodu String dönecekse, veriyi burada döndürüyorsunuz.
+                .code(200)
+                .message("Our Services updated successfully")
+                .build());
+    }
+
+
+
 
 }
