@@ -31,14 +31,9 @@ public class OurServicesService {
 
     public Boolean save(OurServicesSaveRequestDTO dto) {
 
-
         Long authId = extractAuthIdFromToken(dto.token());
-
-        // Check if user exists
         Auth auth = authRepository.findById(authId)
                 .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
-
-        // Upload photo to MinIO and get the URL or file name
         String photoUrl = null;
         if (dto.photo() != null) {
             try {
@@ -47,8 +42,6 @@ public class OurServicesService {
                 throw new GeneralException(ErrorType.PHOTO_UPLOAD_FAILED);
             }
         }
-
-        // Save service data to database
         OurServices ourServices = OurServices.builder()
                 .title(dto.title())
                 .description(dto.description())
@@ -60,7 +53,7 @@ public class OurServicesService {
         return true;
     }
 
-    private static final String SECRET_KEY = "secret";  // JWT için gizli anahtar
+    private static final String SECRET_KEY = "secret";
 
     public String getUserFromToken(Long authid) {
         String token = String.valueOf(jwtTokenManager.createToken(authid));
@@ -105,7 +98,6 @@ public class OurServicesService {
         OurServices ourServices = ourServicesRepository.findById(dto.ourServicesId())
                 .orElseThrow(() -> new GeneralException(ErrorType.OURSERVICES_NOT_FOUND));
 
-        // Update fields if provided
         if (dto.title() != null) {
             ourServices.setTitle(dto.title());
         }
@@ -114,31 +106,25 @@ public class OurServicesService {
         }
         if (dto.photo() != null) {
             try {
-                // Delete the old photo from MinIO if it's being replaced
                 if (ourServices.getPhoto() != null) {
-                    minioService.deletePhoto(ourServices.getPhoto()); // Handle exception in deletePhoto
+                    minioService.deletePhoto(ourServices.getPhoto());
                 }
 
-                // Upload new photo to MinIO and set the URL
-                String newPhotoUrl = minioService.uploadPhoto(dto.photo()); // Handle exception in uploadPhoto
+                String newPhotoUrl = minioService.uploadPhoto(dto.photo());
                 ourServices.setPhoto(newPhotoUrl);
             } catch (Exception e) {
                 throw new GeneralException(ErrorType.PHOTO_UPDATE_FAILED);
             }
         }
 
-        // Save updated service data to the database
+
         ourServicesRepository.save(ourServices);
 
         return true;
     }
 
     public List<OurServices> findAll() {
-        // Retrieve all services from the database
         List<OurServices> services = ourServicesRepository.findAll();
-
-        // Optionally, you can process the list to convert photo URLs if needed
-
         return services;
     }
 

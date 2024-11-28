@@ -26,36 +26,22 @@ public enum ErrorType {
     TOKEN_CREATION_FAILED(1013, "Token creation failed. Please try again.", HttpStatus.INTERNAL_SERVER_ERROR),
     EMAIL_UNVERIFIED(1014, "Email is not verified. Please verify it and try again.", HttpStatus.BAD_REQUEST),
     INVALID_LOGIN_PARAMETER(1015, "Incorrect username or password. Please correct them and try again.", HttpStatus.BAD_REQUEST),
-    USER_IS_ACTIVE( 1016, "User is active." ,   HttpStatus.BAD_REQUEST),
-    USER_ALREADY_DELETED( 1017, "User already deleted.", HttpStatus.BAD_REQUEST),
-    EMAIL_OR_PASSWORD_WRONG( 1018, "Email or password wrong.", HttpStatus.BAD_REQUEST ),
-    PASSWORD_WRONG(1019,"Password Wrong",HttpStatus.BAD_REQUEST),
-    TOKEN_FORMAT_NOT_ACCEPTABLE(1020,"token format not acceptable", HttpStatus.BAD_REQUEST),
-    TOKEN_VERIFY_FAILED(1021,"token verify failed", HttpStatus.SERVICE_UNAVAILABLE),
-    AUTH_NOT_FOUND(1022, "AUTH not found. Please try again.", HttpStatus.NOT_FOUND),
+    USER_IS_ACTIVE(1016, "User is active.", HttpStatus.BAD_REQUEST),
+    USER_ALREADY_DELETED(1017, "User already deleted.", HttpStatus.BAD_REQUEST),
+    EMAIL_OR_PASSWORD_WRONG(1018, "Email or password is incorrect. Please try again.", HttpStatus.BAD_REQUEST),
+    PASSWORD_WRONG(1019, "Password is incorrect. Please try again.", HttpStatus.BAD_REQUEST),
+    TOKEN_FORMAT_NOT_ACCEPTABLE(1020, "Token format is not acceptable. Please check and try again.", HttpStatus.BAD_REQUEST),
+    TOKEN_VERIFY_FAILED(1021, "Token verification failed. Please try again later.", HttpStatus.SERVICE_UNAVAILABLE),
+    AUTH_NOT_FOUND(1022, "Authentication not found. Please try again.", HttpStatus.NOT_FOUND),
     PROJECT_NOT_FOUND(1023, "Project not found. Please try again.", HttpStatus.NOT_FOUND),
     COMMENT_NOT_FOUND(1024, "Comment not found. Please try again.", HttpStatus.NOT_FOUND),
-
-    CONTACT_NOT_FOUND(1025, "Comment not found. Please try again.", HttpStatus.NOT_FOUND),
-
+    CONTACT_NOT_FOUND(1025, "Contact not found. Please try again.", HttpStatus.NOT_FOUND),
     COMMENT_ALREADY_APPROVED_OR_REJECTED(1026, "The comment has already been approved or rejected.", HttpStatus.BAD_REQUEST),
-    OURSERVICES_NOT_FOUND(1027, "OurService not found. Please try again.", HttpStatus.NOT_FOUND),
-    PHOTO_UPLOAD_FAILED(1028, "Photo upload failed", HttpStatus.NOT_FOUND),
-    PHOTO_DELETE_FAILED(1029, "Failed to delete photo from MinIO:", HttpStatus.NOT_FOUND),
-    PHOTO_UPDATE_FAILED(1030, "Failed to update photo", HttpStatus.NOT_FOUND),
-
-
-
-    ;
-
-
-
-
-
-
-
-
-
+    OURSERVICES_NOT_FOUND(1027, "Our Service not found. Please try again.", HttpStatus.NOT_FOUND),
+    PHOTO_UPLOAD_FAILED(1028, "Failed to upload photo. Please try again.", HttpStatus.INTERNAL_SERVER_ERROR),
+    PHOTO_DELETE_FAILED(1029, "Failed to delete photo from MinIO. Please try again.", HttpStatus.INTERNAL_SERVER_ERROR),
+    PHOTO_UPDATE_FAILED(1030, "Failed to update photo. Please try again.", HttpStatus.INTERNAL_SERVER_ERROR),
+    TOKEN_INVALID(1031, "The provided token is invalid. Please try again.", HttpStatus.UNAUTHORIZED);
 
     private Integer code;
     private String message;

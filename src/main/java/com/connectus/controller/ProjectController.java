@@ -1,8 +1,5 @@
 package com.connectus.controller;
-
-import com.connectus.dto.request.ProjectDeleteRequestDTO;
-import com.connectus.dto.request.ProjectSaveRequestDTO;
-import com.connectus.dto.request.ProjectUpdateRequestDTO;
+import com.connectus.dto.request.*;
 import com.connectus.dto.response.ResponseDTO;
 import com.connectus.entity.Project;
 import com.connectus.services.ProjectService;
@@ -10,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -18,60 +16,76 @@ import static com.connectus.constants.EndPoints.*;
 @RestController
 @RequestMapping(PROJECT)
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*", methods = {RequestMethod.POST, RequestMethod.GET, RequestMethod.PUT,RequestMethod.DELETE})
+@CrossOrigin(origins = "*", methods = {RequestMethod.POST, RequestMethod.GET, RequestMethod.PUT, RequestMethod.DELETE})
 public class ProjectController {
     private final ProjectService projectService;
 
     @PostMapping(SAVE)
-    @Operation(summary = "Save a new project",
-            description = "This method is used to register a new project in the system. Project details must be provided in the request body.")
-    public ResponseEntity<ResponseDTO<Boolean>> save(@RequestBody ProjectSaveRequestDTO dto){
+    @Operation(
+            summary = "Save a new service",
+            description = "This method is used to register a new service in the system. Service details must be provided in the request body.")
+    public ResponseEntity<ResponseDTO<Boolean>> save(
+            @RequestPart("photo") MultipartFile photo,
+            @RequestPart("title") String title,
+            @RequestPart("description") String description,
+            @RequestPart("token") String token) {
+
+        ProjectSaveRequestDTO dto = new ProjectSaveRequestDTO(photo, title, description, token);
+        Boolean result = projectService.save(dto);
+
         return ResponseEntity.ok(ResponseDTO.<Boolean>builder()
-                .data(projectService.save(dto))
+                .data(result)
                 .code(200)
-                .message("Succesfully registered")
+                .message("Successfully registered")
                 .build());
     }
 
     @DeleteMapping(DELETE)
     @Operation(
-            summary = "Delete a project",
-            description = "Deletes a project from the system based on the provided project ID. " +
-                    "This action will remove the project from the database permanently, and it cannot be undone."
-    )
+            summary = "Delete a service",
+            description = "Deletes a service from the system based on the provided service ID. " +
+                    "This action will remove the service from the database permanently, and it cannot be undone.")
     public ResponseEntity<ResponseDTO<Boolean>> delete(@RequestBody ProjectDeleteRequestDTO dto) {
+        Boolean result = projectService.delete(dto);
         return ResponseEntity.ok(ResponseDTO.<Boolean>builder()
-                .data(projectService.delete(dto))
+                .data(result)
                 .code(200)
-                .message("Project deleted successfully")
+                .message("Service deleted successfully")
                 .build());
     }
 
     @PutMapping(UPDATE)
     @Operation(
-            summary = "Update an existing project",
-            description = "Updates an existing project in the system. The project ID must be provided, " +
+            summary = "Update an existing service",
+            description = "Updates an existing service in the system. The service ID must be provided, " +
                     "and the fields to be updated (title, description, photo) can be supplied in the request body. " +
-                    "If any field is not provided, it will remain unchanged."
-    )
+                    "If any field is not provided, it will remain unchanged.")
     public ResponseEntity<ResponseDTO<Boolean>> update(@RequestBody ProjectUpdateRequestDTO dto) {
+        Boolean result = projectService.update(dto);
         return ResponseEntity.ok(ResponseDTO.<Boolean>builder()
-                .data(projectService.update(dto))
+                .data(result)
                 .code(200)
-                .message("Project updated successfully")
+                .message("Service updated successfully")
                 .build());
     }
 
     @GetMapping(FINDALL)
     @Operation(
-            summary = "Retrieve All Projects",
-            description = "Returns a list of all projects. This endpoint fetches all the projects stored in the system and returns them as a list of `Project` objects."
-    )
+            summary = "Retrieve All Services",
+            description = "Returns a list of all services. This endpoint fetches all the services stored in the system and returns them as a list of `Project` objects.")
     public ResponseEntity<List<Project>> findAll() {
         List<Project> projects = projectService.findAll();
         return ResponseEntity.ok(projects);
     }
 
+    @GetMapping("/get-user-info")
+    public ResponseEntity<ResponseDTO<String>> getUserInfo(@RequestParam Long authId) {
+        String userInfo = projectService.getUserFromToken(authId);
 
-
+        return ResponseEntity.ok(ResponseDTO.<String>builder()
+                .data(userInfo)
+                .message("User info retrieved successfully")
+                .build());
+    }
 }
+
