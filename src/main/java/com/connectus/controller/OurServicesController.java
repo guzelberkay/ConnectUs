@@ -70,18 +70,16 @@ public class OurServicesController {
     }
 
     @GetMapping(FIND_ALL_BY_SERVICES_ID)
-    @Operation(
-            summary = "Find Service by ID",
-            description = "Fetches a specific service by its unique ID. If the service has a photo, a pre-signed URL will be included in the response."
-    )
-    public ResponseEntity<ResponseDTO<OurServices>> findById(@PathVariable Long id) {
-        OurServices ourServices = ourServicesService.findById(id);
+    public ResponseEntity<ResponseDTO<OurServices>> getServiceById(@RequestParam Long ourServiceId) {
+        OurServices service = ourServicesService.findServiceById(ourServiceId);
+
         return ResponseEntity.ok(ResponseDTO.<OurServices>builder()
-                .data(ourServices)
+                .data(service)
                 .code(200)
-                .message("Service retrieved successfully")
+                .message("Service fetched successfully")
                 .build());
     }
+
 
 
     @GetMapping(FINDALL)

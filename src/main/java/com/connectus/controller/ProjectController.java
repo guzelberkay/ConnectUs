@@ -1,6 +1,7 @@
 package com.connectus.controller;
 import com.connectus.dto.request.*;
 import com.connectus.dto.response.ResponseDTO;
+import com.connectus.entity.OurServices;
 import com.connectus.entity.Project;
 import com.connectus.services.ProjectService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -73,12 +74,13 @@ public class ProjectController {
             summary = "Find Project by ID",
             description = "Fetches a specific project by its unique ID. If the project has a photo, a pre-signed URL will be included in the response."
     )
-    public ResponseEntity<ResponseDTO<Project>> findById(@PathVariable Long id) {
-        Project project = projectService.findById(id);
+    public ResponseEntity<ResponseDTO<Project>> getServiceById(@RequestParam Long projectId) {
+        Project project = projectService.findProjectById(projectId);
+
         return ResponseEntity.ok(ResponseDTO.<Project>builder()
                 .data(project)
                 .code(200)
-                .message("Project retrieved successfully")
+                .message("Service fetched successfully")
                 .build());
     }
 

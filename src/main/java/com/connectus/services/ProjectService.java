@@ -1,6 +1,7 @@
 package com.connectus.services;
 
 import com.connectus.dto.request.*;
+import com.connectus.entity.OurServices;
 import com.connectus.entity.Project;
 import com.connectus.exception.GeneralException;
 import com.connectus.exception.ErrorType;
@@ -129,15 +130,18 @@ public class ProjectService {
         });
         return services;
     }
-    public Project findById(Long projectId) {
+    public Project findProjectById(Long projectId) {
+
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new GeneralException(ErrorType.PROJECT_NOT_FOUND));
 
+        // Fotoğraf için presigned URL oluşturulur
         if (project.getPhoto() != null) {
             String presignedUrl = getPresignedUrl(project.getPhoto());
             project.setPhoto(presignedUrl);
         }
 
+        // Tüm bilgileri döndür
         return project;
     }
 

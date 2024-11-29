@@ -149,17 +149,21 @@ public class OurServicesService {
         });
         return services;
     }
-    public OurServices findById(Long ourServicesId) {
-        OurServices ourServices = ourServicesRepository.findById(ourServicesId)
+    public OurServices findServiceById(Long ourServiceId) {
+        // OurServices doğrulaması
+        OurServices ourServices = ourServicesRepository.findById(ourServiceId)
                 .orElseThrow(() -> new GeneralException(ErrorType.OURSERVICES_NOT_FOUND));
 
+        // Fotoğraf için presigned URL oluşturulur
         if (ourServices.getPhoto() != null) {
             String presignedUrl = getPresignedUrl(ourServices.getPhoto());
             ourServices.setPhoto(presignedUrl);
         }
 
+        // Tüm bilgileri döndür
         return ourServices;
     }
+
 
 
     private Long extractAuthIdFromToken(String token) {
