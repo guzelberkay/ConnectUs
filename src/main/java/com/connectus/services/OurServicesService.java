@@ -10,13 +10,16 @@ import com.connectus.exception.GeneralException;
 import com.connectus.repository.AuthRepository;
 import com.connectus.repository.OurServicesRepository;
 import com.connectus.utility.JwtTokenManager;
+import io.minio.GetPresignedObjectUrlArgs;
+import io.minio.MinioClient;
+import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
-import org.apache.kafka.common.protocol.types.Field;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class OurServicesService {
@@ -25,6 +28,7 @@ public class OurServicesService {
     private final AuthRepository authRepository;
     private final JwtTokenManager jwtTokenManager;
     private final MinioService minioService;
+    private final MinioClient minioClient;
 
     @Value("${minio.bucket-name}")
     private String bucketName;
@@ -89,7 +93,6 @@ public class OurServicesService {
 
     public Boolean update(OurServicesUpdateRequestDTO dto) {
 
-        // Extract user ID from token
         Long authId = extractAuthIdFromToken(dto.token());
         Auth auth = authRepository.findById(authId)
                 .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
@@ -123,10 +126,41 @@ public class OurServicesService {
         return true;
     }
 
+    public String getPresignedUrl(String objectName) {
+        try {
+            return minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+                    .method(Method.GET)
+                    .bucket(bucketName)
+                    .object(objectName)
+                    .expiry(60 * 60) // 1 saat geçerli
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException("Pre-signed URL oluşturulurken hata oluştu", e);
+        }
+    }
+
     public List<OurServices> findAll() {
         List<OurServices> services = ourServicesRepository.findAll();
+        services.forEach(service -> {
+            if (service.getPhoto() != null) {
+                String presignedUrl = getPresignedUrl(service.getPhoto());
+                service.setPhoto(presignedUrl);
+            }
+        });
         return services;
     }
+    public OurServices findById(Long ourServicesId) {
+        OurServices ourServices = ourServicesRepository.findById(ourServicesId)
+                .orElseThrow(() -> new GeneralException(ErrorType.OURSERVICES_NOT_FOUND));
+
+        if (ourServices.getPhoto() != null) {
+            String presignedUrl = getPresignedUrl(ourServices.getPhoto());
+            ourServices.setPhoto(presignedUrl);
+        }
+
+        return ourServices;
+    }
+
 
     private Long extractAuthIdFromToken(String token) {
         Optional<Long> authIdOptional = jwtTokenManager.getAuthIdFromToken(token);

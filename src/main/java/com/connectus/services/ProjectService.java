@@ -7,6 +7,9 @@ import com.connectus.exception.ErrorType;
 import com.connectus.repository.AuthRepository;
 import com.connectus.repository.ProjectRepository;
 import com.connectus.utility.JwtTokenManager;
+import io.minio.GetPresignedObjectUrlArgs;
+import io.minio.MinioClient;
+import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,6 +24,7 @@ public class ProjectService {
     private final AuthRepository authRepository;
     private final JwtTokenManager jwtTokenManager;
     private final MinioService minioService;
+    private final MinioClient minioClient;
 
     @Value("${minio.bucket-name}")
     private String bucketName;
@@ -102,10 +106,42 @@ public class ProjectService {
         projectRepository.save(project);
         return true;
     }
+    public String getPresignedUrl(String objectName) {
+        try {
+            return minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+                    .method(Method.GET)
+                    .bucket(bucketName)
+                    .object(objectName)
+                    .expiry(60 * 60)
+                    .build());
+        } catch (Exception e) {
+            throw new RuntimeException("Pre-signed URL oluşturulurken hata oluştu", e);
+        }
+    }
 
     public List<Project> findAll() {
-        return projectRepository.findAll();
+        List<Project> services = projectRepository.findAll();
+        services.forEach(service -> {
+            if (service.getPhoto() != null) {
+                String presignedUrl = getPresignedUrl(service.getPhoto());
+                service.setPhoto(presignedUrl);
+            }
+        });
+        return services;
     }
+    public Project findById(Long projectId) {
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new GeneralException(ErrorType.PROJECT_NOT_FOUND));
+
+        if (project.getPhoto() != null) {
+            String presignedUrl = getPresignedUrl(project.getPhoto());
+            project.setPhoto(presignedUrl);
+        }
+
+        return project;
+    }
+
+
 
     public String getUserFromToken(Long authId) {
         Optional<Long> optionalAuthId = jwtTokenManager.getAuthIdFromToken(authId.toString());
@@ -115,7 +151,6 @@ public class ProjectService {
             throw new GeneralException(ErrorType.TOKEN_INVALID);
         }
     }
-
     private Long extractAuthIdFromToken(String token) {
         return jwtTokenManager.getAuthIdFromToken(token)
                 .orElseThrow(() -> new GeneralException(ErrorType.TOKEN_INVALID));

@@ -11,16 +11,11 @@ import lombok.NoArgsConstructor;
 @Builder
 @Data
 @Entity
-@Table(name = "tbladdress")
+@Table(name = "tblphone")
 public class Phone {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String description;
     private String value;
-
-    @ManyToOne
-    @JoinColumn(name = "contact_id")
-    private Contact contact;
 }

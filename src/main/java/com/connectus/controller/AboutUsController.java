@@ -17,43 +17,35 @@ import static com.connectus.constants.EndPoints.*;
 public class AboutUsController {
     private final AboutUsService aboutusService;
 
-    @PostMapping(SAVE)
-    @Operation(summary = "Create 'About Us' content", description = "Adds new content to the 'About Us' section.")
-    public ResponseEntity<ResponseDTO<Boolean>> save(@RequestBody AboutUsRequestDTO dto) {
-        return ResponseEntity.ok(ResponseDTO.<Boolean>builder()
-                .data(aboutusService.save(dto))
-                .code(200)
-                .message("Content created successfully")
-                .build());
+    private final AboutUsService aboutUsService;
+
+    /**
+     * Hakkımızda bilgisi kaydedilir veya güncellenir.
+     * @param dto Hakkımızda bilgisi içeren DTO
+     * @return İşlemin başarılı olup olmadığına dair bilgi
+     */
+    @PostMapping(SAVE_OR_UPDATE)
+    public ResponseEntity<Boolean> saveOrUpdate(@RequestBody AboutUsRequestDTO dto) {
+        try {
+            Boolean result = aboutUsService.saveOrUpdate(dto);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(false);
+        }
     }
 
-    @PutMapping(UPDATE )
-    @Operation(summary = "Update 'About Us' content", description = "Updates the 'About Us' content with the specified ID.")
-    public ResponseEntity<ResponseDTO<Boolean>> update( @RequestBody AboutUsRequestDTO dto) {
-        return ResponseEntity.ok(ResponseDTO.<Boolean>builder()
-                .data(aboutusService.update(dto))
-                .code(200)
-                .message("Content updated successfully")
-                .build());
-    }
-
-    @DeleteMapping(DELETE )
-    @Operation(summary = "Delete 'About Us' content", description = "Deletes the 'About Us' content with the specified ID.")
-    public ResponseEntity<ResponseDTO<Boolean>> delete(@RequestBody AboutUsRequestDTO dto) {
-        return ResponseEntity.ok(ResponseDTO.<Boolean>builder()
-                .data(aboutusService.delete(dto))
-                .code(200)
-                .message("Content deleted successfully")
-                .build());
-    }
-    @GetMapping(FINDALL)
-    @Operation(
-            summary = "Get 'About Us' content",
-            description = "Fetches the 'About Us' content. Since only one entry exists, it retrieves the current content from the database."
-    )
+    /**
+     * Hakkımızda bilgisini getirir.
+     * @return Hakkımızda bilgisi
+     */
+    @GetMapping("/find")
     public ResponseEntity<AboutUs> find() {
-        AboutUs aboutUs = aboutusService.find(); // Hakkımızda bilgisi, entity olarak alınıyor.
-        return ResponseEntity.ok(aboutUs);
+        try {
+            AboutUs aboutUs = aboutUsService.find();
+            return ResponseEntity.ok(aboutUs);
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body(null);
+        }
     }
 
 

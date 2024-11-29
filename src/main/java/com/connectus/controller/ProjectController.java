@@ -68,6 +68,20 @@ public class ProjectController {
                 .message("Service updated successfully")
                 .build());
     }
+    @GetMapping(FIND_ALL_BY_PROJECT_ID)
+    @Operation(
+            summary = "Find Project by ID",
+            description = "Fetches a specific project by its unique ID. If the project has a photo, a pre-signed URL will be included in the response."
+    )
+    public ResponseEntity<ResponseDTO<Project>> findById(@PathVariable Long id) {
+        Project project = projectService.findById(id);
+        return ResponseEntity.ok(ResponseDTO.<Project>builder()
+                .data(project)
+                .code(200)
+                .message("Project retrieved successfully")
+                .build());
+    }
+
 
     @GetMapping(FINDALL)
     @Operation(

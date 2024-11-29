@@ -20,69 +20,45 @@ public class AboutUsService {
     private final AboutUsRepository aboutUsRepository;
     private final JwtTokenManager jwtTokenManager;
 
-
-    public Boolean save(AboutUsRequestDTO dto) {
+    public Boolean saveOrUpdate(AboutUsRequestDTO dto) {
         Long authId = extractAuthIdFromToken(dto.token());
 
-
-        Auth auth = authRepository.findById(authId)
+        // Kullanıcının doğrulamasını kontrol et
+        authRepository.findById(authId)
                 .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
 
-        AboutUs aboutUs = AboutUs.builder()
-                .content(dto.content())
-                .build();
+        // "Hakkımızda" bilgisi kontrolü
+        Optional<AboutUs> optionalAboutUs = aboutUsRepository.findFirstByOrderByIdAsc();
 
-        aboutUsRepository.save(aboutUs);
-        return true;
-    }
-
-    public Boolean delete(AboutUsRequestDTO dto) {
-
-        Long authId = extractAuthIdFromToken(dto.token());
-        Auth auth = authRepository.findById(authId)
-                .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
-
-
-        AboutUs aboutUs = aboutUsRepository.findAll().stream()
-                .findFirst()
-                .orElseThrow(() -> new GeneralException(ErrorType.PROJECT_NOT_FOUND));
-
-        aboutUsRepository.delete(aboutUs);
-        return true;
-    }
-
-    public Boolean update(AboutUsRequestDTO dto) {
-        Long authId = extractAuthIdFromToken(dto.token());
-
-
-        Auth auth = authRepository.findById(authId)
-                .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
-
-
-        AboutUs aboutUs = aboutUsRepository.findFirstByOrderByIdAsc()
-                .orElseThrow(() -> new RuntimeException("Hakkımızda bilgisi bulunamadı!"));
-
-
-        if (dto.content() != null) {
-            aboutUs.setContent(dto.content());
+        AboutUs aboutUs;
+        if (optionalAboutUs.isEmpty()) {
+            // Eğer "Hakkımızda" bilgisi yoksa yeni oluştur
+            aboutUs = AboutUs.builder()
+                    .content(dto.content())
+                    .build();
+        } else {
+            // Mevcut bilgiyi güncelle
+            aboutUs = optionalAboutUs.get();
+            if (dto.content() != null) {
+                aboutUs.setContent(dto.content());
+            }
         }
 
+        // Veriyi kaydet
         aboutUsRepository.save(aboutUs);
         return true;
     }
+
     public AboutUs find() {
         return aboutUsRepository.findFirstByOrderByIdAsc()
                 .orElseThrow(() -> new RuntimeException("Hakkımızda bilgisi bulunamadı!"));
     }
 
-
-
     private Long extractAuthIdFromToken(String token) {
         Optional<Long> authIdOptional = jwtTokenManager.getAuthIdFromToken(token);
-        if (authIdOptional.isPresent()) {
-            return authIdOptional.get();
-        } else {
+        if (authIdOptional.isEmpty()) {
             throw new RuntimeException("AuthId could not be extracted from token");
         }
+        return authIdOptional.get();
     }
 }

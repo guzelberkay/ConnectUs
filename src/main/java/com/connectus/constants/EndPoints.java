@@ -26,22 +26,21 @@ public class EndPoints {
 
     //AboutUs
     public static final String ABOUTUS = ROOT + "/aboutus";
+    public static final String SAVE_OR_UPDATE = "/save-or-update";
 
     //Comment
     public static final String COMMENT = ROOT + "/comment";
-    public static final String FINDALL = ROOT + "/findall";
-    public static final String FIND_ALL_BY_PROJECT_ID = ROOT + "/find-all-by-project-id";
-    public static final String APPROVE = ROOT + "/approve";
+    public static final String FINDALL = "/findall";
+    public static final String FIND_ALL_BY_PROJECT_ID = "/find-all-by-project-id";
+    public static final String APPROVE = "/approve";
 
     //Contact
-    public static final String CONTACT = ROOT + "/contact";
-
-    //Services
-    public static final String SERVICES = ROOT + "/services";
-
+    public static final String PHONE = ROOT + "/phone";
+    public static final String ADRESS = ROOT + "/adress";
 
     // OurService
     public static final String OURSERVICES = ROOT + "/ourservice";
+    public static final String FIND_ALL_BY_SERVICES_ID = "/find-all-by-services-id";
 
 
 }
