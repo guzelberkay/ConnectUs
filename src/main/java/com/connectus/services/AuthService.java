@@ -12,8 +12,10 @@ import com.connectus.entity.Auth;
 import com.connectus.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.MessagingException;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -54,19 +56,6 @@ public class AuthService {
         return token;
     }
 
-    public Boolean resetPassword(ResetPasswordRequestDTO dto) {
-        String email = jwtTokenManager.getEmailFromToken(dto.token()).orElseThrow(() -> new GeneralException(INVALID_TOKEN));
-        Auth auth = authRepository.findOptionalByEmail(email)
-                .orElseThrow(() -> new GeneralException(USER_NOT_FOUND));
-        if (!dto.newPassword().equals(dto.rePassword())) {
-            throw new GeneralException(PASSWORD_MISMATCH);
-        }
-
-        String encodedPassword = passwordEncoder.bCryptPasswordEncoder().encode(dto.newPassword());
-        auth.setPassword(encodedPassword);
-        authRepository.save(auth);
-        return true;
-    }
     public Boolean loginProfileManagement(LoginProfileManagementDTO dto,String token) {
         String jwtToken = token.replace("Bearer ", "");
         Long authId = jwtTokenManager.getIdFromToken(jwtToken).orElseThrow(() -> new GeneralException(INVALID_TOKEN));
@@ -95,39 +84,98 @@ public class AuthService {
         return true;
     }
 
-    public String forgetPassword(String email) {
-        MailModel mailModel = MailModel.builder()
-                .code(CodeGenerator.generateResetPasswordCode())
-                .email(email)
-                .build();
+    public Boolean resetPassword(ResetPasswordRequestDTO dto) {
+        // Token'dan email'i alıyoruz
+        String email = jwtTokenManager.getEmailFromToken(dto.token()).orElseThrow(() -> new GeneralException(ErrorType.INVALID_TOKEN));
 
-        Auth auth = authRepository.findByEmail(email)
-                .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
+        // E-posta ile kullanıcıyı veritabanından buluyoruz
+        Auth auth = authRepository.findOptionalByEmail(email)
+                .orElseThrow(() -> new GeneralException(ErrorType.USER_NOT_FOUND));
 
-        auth.setCode(mailModel.getCode());
-
-        // Kullanıcıyı veritabanında güncelliyoruz
-        try {
-            authRepository.save(auth);
-        } catch (Exception e) {
-            // Veritabanı kaydını yaparken bir hata oluşursa
-            throw new GeneralException(ErrorType.INTERNAL_SERVER_ERROR);
+        // Şifreler uyuşmazsa hata veriyoruz
+        if (!dto.newPassword().equals(dto.rePassword())) {
+            throw new GeneralException(ErrorType.PASSWORD_MISMATCH);
         }
 
-        // E-posta gönderme işlemini gerçekleştiriyoruz
-        try {
-            emailService.sendMail(mailModel);
-        } catch (Exception e) {
-            // E-posta gönderimi başarısızsa hata fırlatıyoruz
-            throw new GeneralException(ErrorType.EMAIL_SEND_FAILED);
+        // Token'ın geçerli olup olmadığını kontrol ediyoruz
+        CodeGenerator.ResetCode resetCode = new CodeGenerator.ResetCode(auth.getCode(), auth.getCodeTimestamp());
+        if (resetCode.isExpired()) {
+            throw new GeneralException(ErrorType.EXPIRED_RESET_CODE);  // Token süresi geçmişse hata ver
         }
 
-        // Kullanıcıya mesaj döndürüyoruz
-        return "Şifreme yenileme kodunuz " + email + " adresine gönderildi.";
+        // Şifreyi şifreleyip kaydediyoruz
+        String encodedPassword = passwordEncoder.bCryptPasswordEncoder().encode(dto.newPassword());
+        auth.setPassword(encodedPassword);
+        authRepository.save(auth);
+
+        return true;
     }
 
 
 
+    public String forgetPassword(String email) {
+        // Şifre sıfırlama kodunu üret
+        CodeGenerator.ResetCode resetCode = CodeGenerator.generateResetPasswordCode();
+        System.out.println("Generated Reset Code: " + resetCode.getCode()); // Kodun doğru üretildiğini logla
+
+        // MailModel'ü oluştur
+        MailModel mailModel = MailModel.builder()
+                .code(resetCode.getCode())  // Reset kodu
+                .email(email)  // E-posta
+                .build();
+
+        // Kullanıcıyı veritabanından bul
+        Auth auth = authRepository.findByEmail(email)
+                .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND)); // Eğer kullanıcı bulunmazsa hata fırlat
+
+        System.out.println(auth);
+
+        // Kod süresi dolmuşsa, veritabanındaki kodu sil
+        if (resetCode.isExpired()) {
+            // Silme işlemi yapılabilir
+            auth.setCode(null);
+            auth.setCodeTimestamp(0);
+            authRepository.save(auth);  // Veritabanında güncelleme yap
+
+            // Kullanıcıya bilgi verme
+            throw new GeneralException(EXPIRED_RESET_CODE); // Kodun süresi dolmuş, hata fırlat
+        }
+
+        // Kullanıcıyı güncelle
+        auth.setCode(mailModel.getCode());  // Kod bilgisi
+        auth.setCodeTimestamp(System.currentTimeMillis());  // Zaman damgası
+
+        try {
+            // Veritabanını kaydet
+            authRepository.save(auth);
+            System.out.println("Auth record updated successfully with reset code."); // Veritabanı kaydının başarılı olduğunu logla
+        } catch (Exception e) {
+            e.printStackTrace();  // Veritabanı hatası varsa yazdır
+            throw new GeneralException(ErrorType.INTERNAL_SERVER_ERROR); // Hata durumunda genel hata fırlat
+        }
+
+        // E-posta gönderimi
+        try {
+            emailService.sendMail(mailModel);
+            System.out.println("Reset code email sent to: " + email); // E-posta gönderiminin başarılı olduğunu logla
+        } catch (Exception e) {
+            e.printStackTrace();  // E-posta gönderimi hatası
+            throw new GeneralException(ErrorType.EMAIL_SEND_FAILED); // E-posta hatası durumunda hata fırlat
+        }
+
+        // Şifre sıfırlama kodu gönderildi mesajı
+        return "Şifreme yenileme kodunuz " + email + " adresine gönderildi.";
+    }
+
+    @Scheduled(fixedRate = 60000)  // 1 dakikada bir çalışır
+    public void cleanExpiredCodes() {
+        List<Auth> auths = authRepository.findAll();
+        for (Auth auth : auths) {
+            if (auth.getCode() != null && new CodeGenerator.ResetCode(auth.getCode(), auth.getCodeTimestamp()).isExpired()) {
+                authRepository.delete(auth);  // Süresi dolmuş kodu sil
+            }
+        }
+    }
 
 
     public void updateEmailOfAuth(UpdateEmailOfAuth dto) {

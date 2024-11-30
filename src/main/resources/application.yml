@@ -25,16 +25,11 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: java.teamworks@gmail.com
-    password: fdzw xckg crim hjvu
-    protocol: smtp
-    tls: true
-    default-encoding: UTF-8
+    password: qzlq qqhh fhdz ylhk
     properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.debug: true  # Enable debug mode for logging
 
 connectus:
   secret:
@@ -47,6 +42,3 @@ minio:
   secret-key: password
   bucket-name: business-bucket
   secure: false
-
-
-

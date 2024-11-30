@@ -1,38 +1,50 @@
 package com.connectus.utility;
+
 import java.util.Arrays;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
 
 public class CodeGenerator {
 
-    public static String generateActivationCode() {
-        String string = UUID.randomUUID().toString();
+    private static final long EXPIRATION_TIME = TimeUnit.SECONDS.toMillis(300);
 
-        String[] split =string.split("-");
-        StringBuilder stringBuilder = new StringBuilder();
+    // Kod ve zaman damgası tutan sınıf
+    public static class ResetCode {
+        private String code;
+        private long timestamp;
 
-        for (String s : split) {
-            stringBuilder.append(s.charAt(0));
+        public ResetCode(String code, long timestamp) {
+            this.code = code;
+            this.timestamp = timestamp;
         }
 
-        return stringBuilder.toString();
-    }
-    public static String generateResetPasswordCode() {
-        String string = UUID.randomUUID().toString();
-
-        String[] split =string.split("-");
-        StringBuilder stringBuilder = new StringBuilder();
-
-        for (String s : split) {
-            stringBuilder.append(s.charAt(0));
+        // 'code' değişkenine dışarıdan erişim sağlamak için getter metodu ekliyoruz
+        public String getCode() {
+            return code;
         }
 
-        return stringBuilder.toString();
+        // Kodun süresi dolmuş mu kontrol et
+        public boolean isExpired() {
+            return System.currentTimeMillis() - timestamp > EXPIRATION_TIME;
+        }
     }
-    public static String getActivationCode(){
+
+    // Şifre sıfırlama kodu üretme
+    public static ResetCode generateResetPasswordCode() {
+        String code = generateCode();  // Kod üret
+        long timestamp = System.currentTimeMillis();  // Kod üretildiği zaman
+
+        // Üretilen kodu ve zaman damgasını logla
+        System.out.println("Generated reset password code: " + code + " at timestamp: " + timestamp);
+
+        return new ResetCode(code, timestamp);  // Kod ve zaman damgası döndür
+    }
+
+    // Genel kod üretme fonksiyonu
+    private static String generateCode() {
         String uuid = UUID.randomUUID().toString();
-        return Arrays.stream(uuid.split("-")).map(segment -> String.valueOf(segment.charAt(0)))
-                .collect(Collectors.joining());
+        return uuid.split("-")[0];  // UUID'nin ilk bölümünü alıyoruz
     }
 }
+

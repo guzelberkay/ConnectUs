@@ -25,4 +25,6 @@ public class Auth {
 
     private String password;
     private String code;
+
+    private long codeTimestamp;
 }
