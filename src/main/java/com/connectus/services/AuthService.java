@@ -1,6 +1,7 @@
 package com.connectus.services;
 
 import com.connectus.Model.*;
+import com.connectus.exception.ErrorType;
 import com.connectus.repository.AuthRepository;
 import com.connectus.utility.JwtTokenManager;
 import com.connectus.utility.PasswordEncoder;
@@ -12,6 +13,7 @@ import org.springframework.messaging.MessagingException;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import static com.connectus.exception.ErrorType.*;
 
@@ -91,24 +93,28 @@ public class AuthService {
         return true;
     }
 
-    public Boolean forgetPassword(String email) {
-        Auth auth = authRepository.findOptionalByEmail(email)
-                .orElseThrow(() -> new GeneralException(USER_NOT_FOUND));
+    public Boolean forgetPassword(String toEmail) {
+        // E-posta adresine sahip kullanıcıyı bul
+        Auth auth = authRepository.findByEmail(toEmail)
+                .orElseThrow(() -> new GeneralException(AUTH_NOT_FOUND));
 
-        // Burada şifre sıfırlama için token oluşturulabilir
-        String resetToken = jwtTokenManager.createToken(auth.getId())
-                .orElseThrow(() -> new GeneralException(TOKEN_CREATION_FAILED));
+        // Şifre sıfırlama için rastgele bir link oluştur
+        String resetLink = emailService.generateRandomLink();  //
 
-        // Şifre sıfırlama bağlantısı oluşturuluyor
-        String resetUrl = "http://localhost:8080/reset-password?token=" + resetToken;
+        // Şifre sıfırlama URL'si
+        String resetUrl = "http://localhost:8080/reset-password?link=" + resetLink;
 
         try {
-            emailService.sendPasswordResetEmail(email, resetToken);
+            // E-posta ile sıfırlama linkini gönder
+            emailService.sendPasswordResetEmail(toEmail, resetLink);
             return true;
         } catch (MessagingException e) {
-            throw new GeneralException(EMAIL_OR_PASSWORD_WRONG);
+            // E-posta gönderiminde hata durumunda exception fırlat
+            throw new GeneralException(EMAIL_SEND_FAILED);
         }
     }
+
+
 
 
     public void updateEmailOfAuth(UpdateEmailOfAuth dto) {

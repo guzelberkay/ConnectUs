@@ -41,7 +41,8 @@ public enum ErrorType {
     PHOTO_UPLOAD_FAILED(1028, "Failed to upload photo. Please try again.", HttpStatus.INTERNAL_SERVER_ERROR),
     PHOTO_DELETE_FAILED(1029, "Failed to delete photo from MinIO. Please try again.", HttpStatus.INTERNAL_SERVER_ERROR),
     PHOTO_UPDATE_FAILED(1030, "Failed to update photo. Please try again.", HttpStatus.INTERNAL_SERVER_ERROR),
-    TOKEN_INVALID(1031, "The provided token is invalid. Please try again.", HttpStatus.UNAUTHORIZED);
+    TOKEN_INVALID(1031, "The provided token is invalid. Please try again.", HttpStatus.UNAUTHORIZED),
+    EMAIL_SEND_FAILED(1032, "Email sending failed. Please try again.", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private Integer code;
     private String message;
