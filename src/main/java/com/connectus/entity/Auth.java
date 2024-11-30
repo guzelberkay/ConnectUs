@@ -24,5 +24,5 @@ public class Auth {
     private String email;
 
     private String password;
-
+    private String code;
 }

@@ -2,7 +2,9 @@ package com.connectus.services;
 
 import com.connectus.Model.*;
 import com.connectus.exception.ErrorType;
+import com.connectus.exception.GlobalExceptionHandler;
 import com.connectus.repository.AuthRepository;
+import com.connectus.utility.CodeGenerator;
 import com.connectus.utility.JwtTokenManager;
 import com.connectus.utility.PasswordEncoder;
 import com.connectus.dto.request.*;
@@ -93,26 +95,37 @@ public class AuthService {
         return true;
     }
 
-    public Boolean forgetPassword(String toEmail) {
-        // E-posta adresine sahip kullanıcıyı bul
-        Auth auth = authRepository.findByEmail(toEmail)
-                .orElseThrow(() -> new GeneralException(AUTH_NOT_FOUND));
+    public String forgetPassword(String email) {
+        MailModel mailModel = MailModel.builder()
+                .code(CodeGenerator.generateResetPasswordCode())
+                .email(email)
+                .build();
 
-        // Şifre sıfırlama için rastgele bir link oluştur
-        String resetLink = emailService.generateRandomLink();  //
+        Auth auth = authRepository.findByEmail(email)
+                .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
 
-        // Şifre sıfırlama URL'si
-        String resetUrl = "http://localhost:8080/reset-password?link=" + resetLink;
+        auth.setCode(mailModel.getCode());
 
+        // Kullanıcıyı veritabanında güncelliyoruz
         try {
-            // E-posta ile sıfırlama linkini gönder
-            emailService.sendPasswordResetEmail(toEmail, resetLink);
-            return true;
-        } catch (MessagingException e) {
-            // E-posta gönderiminde hata durumunda exception fırlat
-            throw new GeneralException(EMAIL_SEND_FAILED);
+            authRepository.save(auth);
+        } catch (Exception e) {
+            // Veritabanı kaydını yaparken bir hata oluşursa
+            throw new GeneralException(ErrorType.INTERNAL_SERVER_ERROR);
         }
+
+        // E-posta gönderme işlemini gerçekleştiriyoruz
+        try {
+            emailService.sendMail(mailModel);
+        } catch (Exception e) {
+            // E-posta gönderimi başarısızsa hata fırlatıyoruz
+            throw new GeneralException(ErrorType.EMAIL_SEND_FAILED);
+        }
+
+        // Kullanıcıya mesaj döndürüyoruz
+        return "Şifreme yenileme kodunuz " + email + " adresine gönderildi.";
     }
+
 
 
 

@@ -1,5 +1,6 @@
 package com.connectus.controller;
 
+import com.connectus.exception.GeneralException;
 import com.connectus.services.AuthService;
 import com.connectus.dto.request.*;
 import com.connectus.dto.response.ResponseDTO;
@@ -34,13 +35,19 @@ public class AuthController {
     @Operation(
             summary = "Forget password",
             description = "Forgets the password of a user with the provided email. The email must be provided in the request body.")
-    public ResponseEntity<ResponseDTO<Boolean>> forgetPassword(@RequestParam String email) {
-        return ResponseEntity.ok(ResponseDTO.<Boolean>builder()
-                .data(authService.forgetPassword(email))
-                .code(200)
-                .message("Password reset link sent")
-                .build());
+    public ResponseEntity<String> forgetPassword(@RequestParam String email) {
+        try {
+            String responseMessage = authService.forgetPassword(email);
+            return ResponseEntity.ok(responseMessage);
+        } catch (GeneralException e) {
+            return ResponseEntity.status(e.getErrorType().getHttpStatus())
+                    .body(e.getErrorType().getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(500)
+                    .body("Bir hata oluştu. Lütfen tekrar deneyin.");
+        }
     }
+
 
     @PostMapping (RESETPASSWORD)
     @Operation(
