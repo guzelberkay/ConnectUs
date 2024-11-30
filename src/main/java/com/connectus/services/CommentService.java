@@ -10,7 +10,6 @@ import com.connectus.exception.GeneralException;
 import com.connectus.exception.ErrorType;
 import com.connectus.repository.AuthRepository;
 import com.connectus.repository.CommentRepository;
-import com.connectus.repository.ProjectRepository;
 import com.connectus.utility.JwtTokenManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,7 +22,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CommentService {
     private final CommentRepository commentRepository;
-    private final ProjectRepository projectRepository;
     private final AuthRepository authRepository;
     private final JwtTokenManager jwtTokenManager;
 
@@ -31,6 +29,7 @@ public class CommentService {
 
         Comment comment = Comment.builder()
                 .projectId(dto.projectId())
+                .companyName(dto.companyName())
                 .name(dto.name())
                 .surname(dto.surname())
                 .email(dto.email())
@@ -80,6 +79,7 @@ public class CommentService {
                 .map(comment -> new CommentResponseDTO(
                         comment.getId(),
                         comment.getProjectId(),
+                        comment.getCompanyName(),
                         comment.getName(),
                         comment.getSurname(),
                         comment.getEmail(),
@@ -95,6 +95,7 @@ public class CommentService {
                 .map(comment -> new CommentResponseDTO(
                         comment.getId(),
                         comment.getProjectId(),
+                        comment.getCompanyName(),
                         comment.getName(),
                         comment.getSurname(),
                         comment.getEmail(),

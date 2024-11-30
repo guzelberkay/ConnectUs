@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 public record CommentSaveRequestDTO(
         @NotNull Long projectId,
+        @NotNull String companyName,
         @NotNull String name,
         @NotNull String surname,
         @NotNull String email,

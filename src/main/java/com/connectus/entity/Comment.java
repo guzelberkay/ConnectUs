@@ -20,9 +20,12 @@ public class Comment {
     private Long id;
 
     private Long projectId;
+    private String companyName;
     private String name;
     private String surname;
     private String email;
+    @Lob
+    @Column(columnDefinition = "TEXT") // Opsiyonel, Hibernate kullanıyorsanız TEXT sütunu oluşturmasını sağlar
     private String comment;
 
     @Builder.Default

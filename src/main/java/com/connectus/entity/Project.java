@@ -21,6 +21,8 @@ public class Project {
 
     private String photo;
     private String title;
+    @Lob
+    @Column(columnDefinition = "TEXT") // Opsiyonel, Hibernate kullanıyorsanız TEXT sütunu oluşturmasını sağlar
     private String description;
 
 }
