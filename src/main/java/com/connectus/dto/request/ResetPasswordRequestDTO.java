@@ -2,7 +2,7 @@ package com.connectus.dto.request;
 
 
 public record ResetPasswordRequestDTO(
-        String token,
+        String code,
         String newPassword,
         String rePassword)
 {

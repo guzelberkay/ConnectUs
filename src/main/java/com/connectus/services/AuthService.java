@@ -85,31 +85,30 @@ public class AuthService {
     }
 
     public Boolean resetPassword(ResetPasswordRequestDTO dto) {
-        // Token'dan email'i alıyoruz
-        String email = jwtTokenManager.getEmailFromToken(dto.token()).orElseThrow(() -> new GeneralException(ErrorType.INVALID_TOKEN));
-
-        // E-posta ile kullanıcıyı veritabanından buluyoruz
-        Auth auth = authRepository.findOptionalByEmail(email)
+        // Şifre sıfırlama kodunu kullanıcıyla eşleştiriyoruz
+        Auth auth = authRepository.findOptionalByCode(dto.code())
                 .orElseThrow(() -> new GeneralException(ErrorType.USER_NOT_FOUND));
 
-        // Şifreler uyuşmazsa hata veriyoruz
+        // Şifreler uyuşmuyorsa hata fırlatıyoruz
         if (!dto.newPassword().equals(dto.rePassword())) {
             throw new GeneralException(ErrorType.PASSWORD_MISMATCH);
         }
 
-        // Token'ın geçerli olup olmadığını kontrol ediyoruz
+        // Reset kodunun süresini kontrol ediyoruz
         CodeGenerator.ResetCode resetCode = new CodeGenerator.ResetCode(auth.getCode(), auth.getCodeTimestamp());
         if (resetCode.isExpired()) {
             throw new GeneralException(ErrorType.EXPIRED_RESET_CODE);  // Token süresi geçmişse hata ver
         }
 
-        // Şifreyi şifreleyip kaydediyoruz
+        // Yeni şifreyi şifreleyip kaydediyoruz
         String encodedPassword = passwordEncoder.bCryptPasswordEncoder().encode(dto.newPassword());
         auth.setPassword(encodedPassword);
         authRepository.save(auth);
 
-        return true;
+        return true; // Şifre başarıyla sıfırlandı
     }
+
+
 
 
 
@@ -201,6 +200,22 @@ public class AuthService {
                 .orElseThrow(() -> new GeneralException(USER_NOT_FOUND));
         auth.setPassword(passwordEncoder.bCryptPasswordEncoder().encode(changePasswordFromUserModel.getNewPassword()));
         authRepository.save(auth);
+    }
+    public Auth getAuthFromToken(String token) {
+        Long authId = extractAuthIdFromToken(token);
+        return authRepository.findById(authId)
+                .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
+    }
+
+
+
+    private Long extractAuthIdFromToken(String token) {
+        Optional<Long> authIdOptional = jwtTokenManager.getAuthIdFromToken(token);
+        if (authIdOptional.isPresent()) {
+            return authIdOptional.get();
+        } else {
+            throw new RuntimeException("AuthId could not be extracted from token");
+        }
     }
 
 }

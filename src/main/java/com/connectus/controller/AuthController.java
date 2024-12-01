@@ -1,5 +1,6 @@
 package com.connectus.controller;
 
+import com.connectus.entity.Auth;
 import com.connectus.exception.GeneralException;
 import com.connectus.services.AuthService;
 import com.connectus.dto.request.*;
@@ -47,6 +48,12 @@ public class AuthController {
                     .body("Bir hata oluştu. Lütfen tekrar deneyin.");
         }
     }
+    @GetMapping(FINDALL)
+    public ResponseEntity<Auth> getAuth(@RequestParam String token) {
+        Auth auth = authService.getAuthFromToken(token);
+        return ResponseEntity.ok(auth);
+    }
+
 
     @PostMapping (RESETPASSWORD)
     @Operation(
