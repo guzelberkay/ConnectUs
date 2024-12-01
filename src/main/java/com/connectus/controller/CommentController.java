@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.connectus.constants.EndPoints.*;
@@ -74,14 +75,20 @@ public class CommentController {
             summary = "Get all comments for admin",
             description = "Fetches a list of all comments from the database for the admin to manage (approve, reject, or delete comments)."
     )
-    public ResponseEntity<ResponseDTO<List<CommentResponseDTO>>> getAllComments(@RequestParam String token) {
-        List<CommentResponseDTO> coments = commentService.getAllComents(token);
+    public ResponseEntity<ResponseDTO<List<CommentResponseDTO>>> getAllComments(@RequestBody String token) {
+        List<CommentResponseDTO> comments = commentService.getAllComments(token);
+        if (comments == null) {
+            comments = new ArrayList<>();
+        }
+
+
         return ResponseEntity.ok(ResponseDTO.<List<CommentResponseDTO>>builder()
-                .data(coments)
-                .code(200)
-                .message("Events found successfully")
+                .data(comments)
+                .code(200)  // HTTP status code
+                .message("Comments retrieved successfully")
                 .build());
     }
+
     @GetMapping(FIND_ALL_BY_PROJECT_ID  )
     @Operation(
             summary = "Get comments for a specific project",

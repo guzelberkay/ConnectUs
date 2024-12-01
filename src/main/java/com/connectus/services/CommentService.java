@@ -76,16 +76,22 @@ public class CommentService {
         commentRepository.delete(comment);
         return true;
     }
-    public List<CommentResponseDTO> getAllComents(String token) {
+    public List<CommentResponseDTO> getAllComments(String token) {
+        // Extract the authenticated user's ID from the token
         Long authId = extractAuthIdFromToken(token);
+
+        // Find the authenticated user
         Auth auth = authRepository.findById(authId)
                 .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
 
-        List<Comment> comments = commentRepository.findAll();
+        // Fetch all comments (add pagination/filtering based on your needs)
+        List<Comment> comments = commentRepository.findAll();  // This can be optimized
 
+        // Map Comment entities to CommentResponseDTO
         return comments.stream()
                 .map(comment -> new CommentResponseDTO(
                         comment.getId(),
+                        comment.getStatus(),    // The status directly from the entity
                         comment.getProjectId(),
                         comment.getCompanyName(),
                         comment.getName(),
@@ -96,12 +102,14 @@ public class CommentService {
                 .collect(Collectors.toList());
     }
 
+
     public List<CommentResponseDTO> getCommentsByProjectId(Long projectId) {
         List<Comment> comments = commentRepository.findByProjectIdAndStatus(projectId, EStatus.ACTIVE);
 
         return comments.stream()
                 .map(comment -> new CommentResponseDTO(
                         comment.getId(),
+                        comment.getStatus(),
                         comment.getProjectId(),
                         comment.getCompanyName(),
                         comment.getName(),
