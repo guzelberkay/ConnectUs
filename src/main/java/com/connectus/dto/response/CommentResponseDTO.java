@@ -6,7 +6,7 @@ import jakarta.persistence.Enumerated;
 
 public record CommentResponseDTO(
         Long id,              // Yorum ID'si
-        @Enumerated(EnumType.STRING) EStatus status,
+        EStatus status,
         Long projectId,
         String companyName,
         String name,

@@ -1,9 +1,11 @@
 package com.connectus.controller;
 
+import com.connectus.dto.request.ApproveCommentRequestDTO;
 import com.connectus.dto.request.CommentDeleteRequestDTO;
 import com.connectus.dto.request.CommentSaveRequestDTO;
 import com.connectus.dto.response.CommentResponseDTO;
 import com.connectus.dto.response.ResponseDTO;
+import com.connectus.entity.Comment;
 import com.connectus.services.CommentService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -38,21 +40,27 @@ public class CommentController {
                 .build();
         return ResponseEntity.ok(response);
     }
-
     @PutMapping(APPROVE)
     @Operation(
             summary = "Approve a comment",
             description = "Approves a comment that is in 'PENDING' status."
     )
-    public ResponseEntity<ResponseDTO<Boolean>> approveComment(@RequestBody String token,Long commentId) {
-        boolean isApproved = commentService.approveComment(token, commentId);
+    public ResponseEntity<ResponseDTO<Boolean>> approveComment(@RequestBody ApproveCommentRequestDTO dto) {
+        // Service metoduna DTO'dan gelen verileri gönderiyoruz
+        boolean isApproved = commentService.approveComment(dto.id(), dto.token());
+
+        // ResponseDTO oluşturuluyor
         ResponseDTO<Boolean> response = ResponseDTO.<Boolean>builder()
                 .data(isApproved)
                 .code(200)
                 .message("The comment was approved successfully.")
                 .build();
+
+        // Response döndürülüyor
         return ResponseEntity.ok(response);
     }
+
+
 
     @DeleteMapping(DELETE)
     @Operation(
@@ -75,18 +83,8 @@ public class CommentController {
             summary = "Get all comments for admin",
             description = "Fetches a list of all comments from the database for the admin to manage (approve, reject, or delete comments)."
     )
-    public ResponseEntity<ResponseDTO<List<CommentResponseDTO>>> getAllComments(@RequestBody String token) {
-        List<CommentResponseDTO> comments = commentService.getAllComments(token);
-        if (comments == null) {
-            comments = new ArrayList<>();
-        }
-
-
-        return ResponseEntity.ok(ResponseDTO.<List<CommentResponseDTO>>builder()
-                .data(comments)
-                .code(200)  // HTTP status code
-                .message("Comments retrieved successfully")
-                .build());
+    public List<Comment> getAllComments() {
+        return commentService.getAllComments(); // Service'den gelen tüm yorumları döndür
     }
 
     @GetMapping(FIND_ALL_BY_PROJECT_ID  )
@@ -94,22 +92,12 @@ public class CommentController {
             summary = "Get comments for a specific project",
             description = "Fetches a list of all comments associated with a given projectId."
     )
-    public ResponseEntity<ResponseDTO<List<CommentResponseDTO>>> getCommentsByProjectId(@RequestBody Long projectId) {
-        List<CommentResponseDTO> comments = commentService.getCommentsByProjectId(projectId);
-
-        return ResponseEntity.ok(ResponseDTO.<List<CommentResponseDTO>>builder()
-                .data(comments)
-                .code(200)
-                .message("Comments for project " + projectId + " found successfully.")
-                .build());
+    public List<Comment> getCommentsByProjectId(@RequestParam Long projectId) {
+        return commentService.getCommentsByProjectId(projectId);
     }
-
-
-
-
-
-
-
-
-
 }
+
+
+
+
+

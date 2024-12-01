@@ -19,7 +19,7 @@ public class StartupRunner implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         // Varsayılan kullanıcı bilgileri
-        String email = "guzelberkay@outlook.com";
+        String email = "isttekzemin@gmail.com";
         String password = "Herekeliyim59.";
 
         // Şifreyi hash'le

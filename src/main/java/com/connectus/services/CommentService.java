@@ -1,5 +1,6 @@
 package com.connectus.services;
 
+import com.connectus.dto.request.ApproveCommentRequestDTO;
 import com.connectus.dto.request.CommentDeleteRequestDTO;
 import com.connectus.dto.request.CommentSaveRequestDTO;
 import com.connectus.dto.response.CommentResponseDTO;
@@ -14,6 +15,7 @@ import com.connectus.utility.JwtTokenManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -39,7 +41,7 @@ public class CommentService {
         commentRepository.save(comment);
         return true;
     }
-    public Boolean approveComment(String token, Long commentId) {
+    public Boolean approveComment(Long commentId, String token) {
         // Token'dan kullanıcı ID'sini çıkartma
         Long authId = extractAuthIdFromToken(token);
 
@@ -53,14 +55,17 @@ public class CommentService {
 
         // Yorumun "PENDING" statüsünde olup olmadığını kontrol etme
         if (comment.getStatus() == EStatus.PENDING) {
-            comment.setStatus(EStatus.ACTIVE);
-            commentRepository.save(comment);  // Yorumun durumunu "ACTIVE" olarak güncelleme
+            comment.setStatus(EStatus.ACTIVE);  // Yorumun durumunu "ACTIVE" olarak güncelleme
+            commentRepository.save(comment);  // Yorum kaydediliyor
             return true;
         } else {
             // Yorum zaten onaylanmış veya reddedilmişse hata fırlatma
             throw new GeneralException(ErrorType.COMMENT_ALREADY_APPROVED_OR_REJECTED);
         }
     }
+
+
+
 
 
     public Boolean delete(CommentDeleteRequestDTO dto) {
@@ -76,48 +81,15 @@ public class CommentService {
         commentRepository.delete(comment);
         return true;
     }
-    public List<CommentResponseDTO> getAllComments(String token) {
-        // Extract the authenticated user's ID from the token
-        Long authId = extractAuthIdFromToken(token);
-
-        // Find the authenticated user
-        Auth auth = authRepository.findById(authId)
-                .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
-
-        // Fetch all comments (add pagination/filtering based on your needs)
-        List<Comment> comments = commentRepository.findAll();  // This can be optimized
-
-        // Map Comment entities to CommentResponseDTO
-        return comments.stream()
-                .map(comment -> new CommentResponseDTO(
-                        comment.getId(),
-                        comment.getStatus(),    // The status directly from the entity
-                        comment.getProjectId(),
-                        comment.getCompanyName(),
-                        comment.getName(),
-                        comment.getSurname(),
-                        comment.getEmail(),
-                        comment.getComment()
-                ))
-                .collect(Collectors.toList());
+    public List<Comment> getAllComments() {
+        return commentRepository.findAll();
     }
 
 
-    public List<CommentResponseDTO> getCommentsByProjectId(Long projectId) {
-        List<Comment> comments = commentRepository.findByProjectIdAndStatus(projectId, EStatus.ACTIVE);
 
-        return comments.stream()
-                .map(comment -> new CommentResponseDTO(
-                        comment.getId(),
-                        comment.getStatus(),
-                        comment.getProjectId(),
-                        comment.getCompanyName(),
-                        comment.getName(),
-                        comment.getSurname(),
-                        comment.getEmail(),
-                        comment.getComment()
-                ))
-                .collect(Collectors.toList());
+    public List<Comment> getCommentsByProjectId(Long projectId) {
+        // ProjectId'ye göre yorumları alıyoruz
+        return commentRepository.findByProjectId(projectId);
     }
 
 
