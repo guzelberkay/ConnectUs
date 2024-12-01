@@ -43,8 +43,8 @@ public class CommentController {
             summary = "Approve a comment",
             description = "Approves a comment that is in 'PENDING' status."
     )
-    public ResponseEntity<ResponseDTO<Boolean>> approveComment(@PathVariable Long commentId) {
-        boolean isApproved = commentService.approveComment(commentId);
+    public ResponseEntity<ResponseDTO<Boolean>> approveComment(@RequestBody String token,Long commentId) {
+        boolean isApproved = commentService.approveComment(token, commentId);
         ResponseDTO<Boolean> response = ResponseDTO.<Boolean>builder()
                 .data(isApproved)
                 .code(200)
@@ -87,7 +87,7 @@ public class CommentController {
             summary = "Get comments for a specific project",
             description = "Fetches a list of all comments associated with a given projectId."
     )
-    public ResponseEntity<ResponseDTO<List<CommentResponseDTO>>> getCommentsByProjectId(@PathVariable Long projectId) {
+    public ResponseEntity<ResponseDTO<List<CommentResponseDTO>>> getCommentsByProjectId(@RequestBody Long projectId) {
         List<CommentResponseDTO> comments = commentService.getCommentsByProjectId(projectId);
 
         return ResponseEntity.ok(ResponseDTO.<List<CommentResponseDTO>>builder()

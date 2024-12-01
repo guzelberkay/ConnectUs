@@ -39,20 +39,28 @@ public class CommentService {
         commentRepository.save(comment);
         return true;
     }
+    public Boolean approveComment(String token, Long commentId) {
+        // Token'dan kullanıcı ID'sini çıkartma
+        Long authId = extractAuthIdFromToken(token);
 
-    public Boolean approveComment(Long commentId) {
+        // Kullanıcıyı bulma
+        Auth auth = authRepository.findById(authId)
+                .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
+
+        // Yorumu bulma
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new GeneralException(ErrorType.COMMENT_NOT_FOUND));
 
+        // Yorumun "PENDING" statüsünde olup olmadığını kontrol etme
         if (comment.getStatus() == EStatus.PENDING) {
             comment.setStatus(EStatus.ACTIVE);
-            commentRepository.save(comment);
+            commentRepository.save(comment);  // Yorumun durumunu "ACTIVE" olarak güncelleme
             return true;
         } else {
+            // Yorum zaten onaylanmış veya reddedilmişse hata fırlatma
             throw new GeneralException(ErrorType.COMMENT_ALREADY_APPROVED_OR_REJECTED);
         }
     }
-
 
 
     public Boolean delete(CommentDeleteRequestDTO dto) {
