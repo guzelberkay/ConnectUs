@@ -2,14 +2,16 @@ server:
   port: 9090
 spring:
   datasource:
-    url: jdbc:postgresql://34.118.236.190:5432/AuthDB
-    username: admin
-    password: root
+    url: jdbc:postgresql://dpg-ct87itpopnds73bu3920-a.oregon-postgres.render.com:5432/connectusauthdb
+    username: connectusauthdb_user
+    password: QkUuiVGArWwxb9HATS2vgtVTUmlnQBBb
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
+    show-sql: true
+
   mail:
     host: smtp.gmail.com
     port: 587
@@ -26,8 +28,8 @@ connectus:
     issuer: ${JAVA_14_ISSUER:defaultIssuer}
 
 minio:
-  url: http://34.118.233.116:9000 # MinIO URL (LoadBalancer servisi)
-  access-key: java14-user
-  secret-key: java14-password
+  url: https://minio-server-latest-1.onrender.com  # Render tarafından sağlanan public URL
+  root-user: ${MINIO_ROOT_USER}  # Çevresel değişken ile kullanıcı adı
+  root-password: ${MINIO_ROOT_PASSWORD}  # Çevresel değişken ile şifre
   bucket-name: business-bucket
-  secure: false
+  secure: true  # HTTPS üzerinden bağlantı sağlanacağı için 'secure' true yapmanız gerekebilir

@@ -1,0 +1,9 @@
+# Min.io Docker imajını kullanıyoruz
+FROM minio/minio:latest
+
+# Min.io'yu başlatmak için gerekli ortam değişkenlerini ayarlıyoruz
+ENV MINIO_ACCESS_KEY=user
+ENV MINIO_SECRET_KEY=password
+
+# Min.io'yu başlatıyoruz
+ENTRYPOINT ["minio", "server", "/data"]
