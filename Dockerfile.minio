@@ -1,9 +1,13 @@
-# Min.io Docker imajını kullanıyoruz
+# MinIO'nun resmi Docker imajını kullan
 FROM minio/minio:latest
 
-# Min.io'yu başlatmak için gerekli ortam değişkenlerini ayarlıyoruz
-ENV MINIO_ACCESS_KEY=user
-ENV MINIO_SECRET_KEY=password
+# Ortam değişkenlerini ayarla (Admin kullanıcı adı ve şifresi)
+ENV MINIO_ROOT_USER=user
+ENV MINIO_ROOT_PASSWORD=password
 
-# Min.io'yu başlatıyoruz
-ENTRYPOINT ["minio", "server", "/data"]
+# Web konsolunun portu
+EXPOSE 9000  # MinIO API portu
+EXPOSE 9001  # MinIO Konsol portu
+
+# MinIO'yu başlatma komutu ve konsolun 9001'de çalışmasını sağla
+CMD ["minio", "server", "/data", "--console-address", ":9001"]
