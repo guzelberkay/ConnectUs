@@ -27,9 +27,11 @@ connectus:
     secret-key: ${JAVA_14_SECRET_KEY:defaultSecretKey}
     issuer: ${JAVA_14_ISSUER:defaultIssuer}
 
-minio:
-  url: https://minio-server-latest-1.onrender.com  # Render tarafından sağlanan public URL
-  root-user: ${MINIO_ROOT_USER}  # Çevresel değişken ile kullanıcı adı
-  root-password: ${MINIO_ROOT_PASSWORD}  # Çevresel değişken ile şifre
-  bucket-name: business-bucket
-  secure: true  # HTTPS üzerinden bağlantı sağlanacağı için 'secure' true yapmanız gerekebilir
+aws:
+  region: ${AWS_REGION}
+  s3:
+    buckets:
+      customer: ${AWS_BUCKET_NAME}
+  credentials:
+    access-key-id: ${AWS_ACCESS_KEY_ID}
+    secret-access-key: ${AWS_SECRET_ACCESS_KEY}

@@ -27,7 +27,7 @@ public class OurServicesService {
     private final OurServicesRepository ourServicesRepository;
     private final AuthRepository authRepository;
     private final JwtTokenManager jwtTokenManager;
-    private final MinioService minioService;
+    private final S3Service s3Service;
     private final MinioClient minioClient;
 
     @Value("${minio.bucket-name}")
@@ -41,7 +41,7 @@ public class OurServicesService {
         String photoUrl = null;
         if (dto.photo() != null) {
             try {
-                photoUrl = minioService.uploadPhoto(dto.photo());
+                photoUrl = s3Service.uploadPhoto(dto.photo());
             } catch (Exception e) {
                 throw new GeneralException(ErrorType.PHOTO_UPLOAD_FAILED);
             }
@@ -78,7 +78,7 @@ public class OurServicesService {
 
         if (ourServices.getPhoto() != null) {
             try {
-                minioService.deletePhoto(ourServices.getPhoto());
+                s3Service.deletePhoto(ourServices.getPhoto());
             } catch (Exception e) {
                 throw new GeneralException(ErrorType.PHOTO_DELETE_FAILED);
             }
@@ -110,10 +110,10 @@ public class OurServicesService {
         if (dto.photo() != null) {
             try {
                 if (ourServices.getPhoto() != null) {
-                    minioService.deletePhoto(ourServices.getPhoto());
+                    s3Service.deletePhoto(ourServices.getPhoto());
                 }
 
-                String newPhotoUrl = minioService.uploadPhoto(dto.photo());
+                String newPhotoUrl = s3Service.uploadPhoto(dto.photo());
                 ourServices.setPhoto(newPhotoUrl);
             } catch (Exception e) {
                 throw new GeneralException(ErrorType.PHOTO_UPDATE_FAILED);
