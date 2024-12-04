@@ -26,4 +26,9 @@ public class MinioConfig {
                 .credentials(accessKey, secretKey)
                 .build();
     }
+
+    @Bean
+    public String bucketName() {
+        return bucketName;
+    }
 }
