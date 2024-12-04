@@ -2,7 +2,6 @@ package com.connectus.services;
 
 import com.connectus.Model.*;
 import com.connectus.exception.ErrorType;
-import com.connectus.exception.GlobalExceptionHandler;
 import com.connectus.repository.AuthRepository;
 import com.connectus.utility.CodeGenerator;
 import com.connectus.utility.JwtTokenManager;

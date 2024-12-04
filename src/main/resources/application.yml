@@ -1,26 +1,15 @@
 server:
   port: 9090
-
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3306/connectusdb
-    username: root
-    password: 1234
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  servlet:
-    multipart:
-      enabled: true
-      max-file-size: 5GB
-      max-request-size: 5GB
+    url: jdbc:postgresql://34.118.236.190:5432/AuthDB
+    username: admin
+    password: root
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-
+      ddl-auto: create
   mail:
     host: smtp.gmail.com
     port: 587
@@ -29,7 +18,7 @@ spring:
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
-      mail.debug: true  # Enable debug mode for logging
+      mail.debug: true
 
 connectus:
   secret:
@@ -37,8 +26,8 @@ connectus:
     issuer: ${JAVA_14_ISSUER:defaultIssuer}
 
 minio:
-  url: http://localhost:9000
-  access-key: user
-  secret-key: password
+  url: http://34.118.233.116:9000 # MinIO URL (LoadBalancer servisi)
+  access-key: java14-user
+  secret-key: java14-password
   bucket-name: business-bucket
   secure: false
