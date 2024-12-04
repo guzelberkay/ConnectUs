@@ -10,10 +10,10 @@ public class MinioConfig {
     @Value("${minio.url}")
     private String minioUrl;
 
-    @Value("${minio.access-key}")
+    @Value("${minio.root-user}")
     private String accessKey;
 
-    @Value("${minio.secret-key}")
+    @Value("${minio.root-password}")
     private String secretKey;
 
     @Value("${minio.bucket-name}")
@@ -25,10 +25,5 @@ public class MinioConfig {
                 .endpoint(minioUrl)
                 .credentials(accessKey, secretKey)
                 .build();
-    }
-
-    @Bean
-    public String bucketName() {
-        return bucketName;
     }
 }
