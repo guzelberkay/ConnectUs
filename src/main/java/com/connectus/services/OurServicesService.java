@@ -1,24 +1,23 @@
 package com.connectus.services;
 
-import com.connectus.dto.request.OurServicesDeleteRequestDTO;
 import com.connectus.dto.request.OurServicesSaveRequestDTO;
-import com.connectus.dto.request.OurServicesUpdateRequestDTO;
+import com.connectus.dto.request.OurServicesDeleteRequestDTO;
+import com.connectus.dto.response.OurServicesResponseDTO;
 import com.connectus.entity.Auth;
 import com.connectus.entity.OurServices;
-import com.connectus.entity.Project;
 import com.connectus.exception.ErrorType;
 import com.connectus.exception.GeneralException;
 import com.connectus.repository.AuthRepository;
 import com.connectus.repository.OurServicesRepository;
 import com.connectus.utility.JwtTokenManager;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,94 +27,66 @@ public class OurServicesService {
     private final AuthRepository authRepository;
     private final JwtTokenManager jwtTokenManager;
 
-    private final S3Service s3Service;
-    @Value("${aws.s3.buckets.customer}")
-    private String bucketName;
-
-
-    public Boolean save(OurServicesSaveRequestDTO dto) {
+    public Boolean save(OurServicesSaveRequestDTO dto) throws IOException {
         Long authId = extractAuthIdFromToken(dto.token());
         Auth auth = authRepository.findById(authId)
                 .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
 
-        String photoUrl = null;
-        if (dto.photo() != null) {
-            try {
+        // Create a new OurServices entity and set values
+        OurServices ourServices = new OurServices();
+        ourServices.setTitle(dto.title());
+        ourServices.setDescription(dto.description());
+        String originalFilename = dto.photo().getOriginalFilename();
+        String contentType = dto.photo().getContentType();
+        byte[] fileData = dto.photo().getBytes();
 
-                String fileKey = UUID.randomUUID().toString() + "_" + dto.photo().getOriginalFilename();
+        ourServices.setName(originalFilename);
+        ourServices.setType(contentType);
+        ourServices.setFile(fileData);
 
-                photoUrl = s3Service.putObject(bucketName, fileKey, dto.photo());
-            } catch (IOException e) {
-                throw new GeneralException(ErrorType.PHOTO_UPLOAD_FAILED);
-            }
-        }
-
-        OurServices ourServices = OurServices.builder()
-                .title(dto.title())
-                .description(dto.description())
-                .photo(photoUrl)
-                .build();
-
+        // Save entity to database
         ourServicesRepository.save(ourServices);
-        return true;
+
+        // Return the metadata or file URL
+        return true; // You could also return the ID or file URL here
     }
 
 
 
-    public String getUserFromToken(Long authid) {
-        String token = String.valueOf(jwtTokenManager.createToken(authid));
-        return token;
-    }
+
 
     public Boolean delete(OurServicesDeleteRequestDTO dto) {
         Long authId = extractAuthIdFromToken(dto.token());
-        Auth auth = authRepository.findById(authId)
+        authRepository.findById(authId)
                 .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
 
         OurServices ourServices = ourServicesRepository.findById(dto.ourServicesId())
                 .orElseThrow(() -> new GeneralException(ErrorType.OURSERVICES_NOT_FOUND));
-
-        if (ourServices.getPhoto() != null) {
-            try {
-                String photoKey = s3Service.extractS3KeyFromUrl(ourServices.getPhoto());
-                s3Service.deleteObject(bucketName, photoKey);
-            } catch (Exception e) {
-                throw new GeneralException(ErrorType.PHOTO_DELETE_FAILED);
-            }
-        }
 
         ourServicesRepository.delete(ourServices);
         return true;
     }
 
 
+    public byte[] getOneImage(Long id) {
+        ourServicesRepository.findById(id).
+                orElseThrow(() -> new IllegalStateException("image with " + id + " doesn't exist"));
+        return ourServicesRepository.findById(id).get().getFile();
+    }
+    public List<OurServicesResponseDTO> findAll() {
+        return ourServicesRepository.findAll().stream()
+                .map(service -> new OurServicesResponseDTO(
+                        service.getId(),
+                        service.getTitle(),
+                        service.getDescription(),
+                        "https://connectus-27o3.onrender.com/dev/v1/ourservice/" + service.getId() // Fotoğraf için erişim URL'si
 
-    public List<OurServices> findAll() {
-        List<OurServices> services = ourServicesRepository.findAll();
-        services.forEach(service -> {
-            if (service.getPhoto() != null) {
-                try {
-                    String presignedUrl = s3Service.createPresignedGetUrl(bucketName, service.getPhoto());
-                    service.setPhoto(presignedUrl);
-                } catch (Exception e) {
-                    service.setPhoto("default-error-url.jpg"); // Hata durumunda varsayılan bir görsel URL'si
-                }
-            }
-        });
-        return services;
+                ))
+                .collect(Collectors.toList());
     }
 
-    public OurServices findProjectById(Long ourServiceId) {
-        OurServices ourServices = ourServicesRepository.findById(ourServiceId)
-                .orElseThrow(() -> new GeneralException(ErrorType.PROJECT_NOT_FOUND));
 
-        if (ourServices.getPhoto() != null) {
-            String presignedUrl = s3Service.createPresignedGetUrl(bucketName, ourServices.getPhoto());
-            ourServices.setPhoto(presignedUrl);
-        }
 
-        return ourServices;
-    }
     private Long extractAuthIdFromToken(String token) {
         Optional<Long> authIdOptional = jwtTokenManager.getAuthIdFromToken(token);
         if (authIdOptional.isPresent()) {

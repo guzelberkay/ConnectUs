@@ -1,9 +1,7 @@
 package com.connectus.entity;
 
-import com.connectus.entity.enums.EStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -18,11 +16,14 @@ public class Project {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    private String photo;
-    private String title;
+    private String employer; // işveren
     @Lob
     @Column(columnDefinition = "TEXT") // Opsiyonel, Hibernate kullanıyorsanız TEXT sütunu oluşturmasını sağlar
-    private String description;
+    private String title; // işin adı
+    private String location; //yer
+    private String date; // tarih
+    @Lob
+    @Column(columnDefinition = "TEXT") // Opsiyonel, Hibernate kullanıyorsanız TEXT sütunu oluşturmasını sağlar
+    private String description;  // kapsam
 
 }

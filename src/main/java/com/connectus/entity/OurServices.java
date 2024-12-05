@@ -19,9 +19,18 @@ public class OurServices {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String photo;
+    @Column
+    private String name;
+
+    private String type;
+
+    @Column(length = 50000000)
+    @Lob
+    private byte[] file;
     private String title;
+
     @Lob
     @Column(columnDefinition = "TEXT") // Opsiyonel, Hibernate kullanıyorsanız TEXT sütunu oluşturmasını sağlar
     private String description;
 }
+

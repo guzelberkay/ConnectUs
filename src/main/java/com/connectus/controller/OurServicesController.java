@@ -1,94 +1,73 @@
-package com.connectus.controller;
+    package com.connectus.controller;
 
-import com.connectus.dto.request.*;
-import com.connectus.dto.response.ResponseDTO;
-import com.connectus.entity.OurServices;
-import com.connectus.services.OurServicesService;
-import io.swagger.v3.oas.annotations.Operation;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+    import com.connectus.dto.request.OurServicesSaveRequestDTO;
+    import com.connectus.dto.request.OurServicesDeleteRequestDTO;
+    import com.connectus.dto.response.OurServicesResponseDTO;
+    import com.connectus.dto.response.ResponseDTO;
+    import com.connectus.entity.OurServices;
+    import com.connectus.exception.ErrorType;
+    import com.connectus.exception.GeneralException;
+    import com.connectus.repository.OurServicesRepository;
+    import com.connectus.services.OurServicesService;
+    import io.swagger.v3.oas.annotations.Operation;
+    import lombok.RequiredArgsConstructor;
+    import org.springframework.http.*;
+    import org.springframework.web.bind.annotation.*;
+    import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+    import java.io.IOException;
+    import java.util.List;
 
-import static com.connectus.constants.EndPoints.*;
-import static com.connectus.constants.EndPoints.FINDALL;
-@RestController
-@RequestMapping(OURSERVICES)
-@RequiredArgsConstructor
-@CrossOrigin(origins = "*", methods = {RequestMethod.POST, RequestMethod.GET, RequestMethod.PUT,RequestMethod.DELETE})
-public class OurServicesController {
-    private final OurServicesService ourServicesService;
+    import static com.connectus.constants.EndPoints.*;
 
-    @PostMapping(SAVE)
-    @Operation(summary = "Save a new service",
-            description = "This method is used to register a new service in the system. Service details must be provided in the request body.")
-    public ResponseEntity<ResponseDTO<Boolean>> save(
-            @RequestPart("photo") MultipartFile photo,
-            @RequestPart("title") String title,
-            @RequestPart("description") String description,
-            @RequestPart("token") String token) {
+    @RestController
+    @RequestMapping(OURSERVICES)
+    @RequiredArgsConstructor
+    @CrossOrigin(origins = "*", methods = {RequestMethod.POST, RequestMethod.GET, RequestMethod.PUT, RequestMethod.DELETE})
+    public class OurServicesController {
 
-        OurServicesSaveRequestDTO dto = new OurServicesSaveRequestDTO(photo, title, description, token);
+        private final OurServicesService ourServicesService;
+        private final OurServicesRepository ourServicesRepository;
 
-        return ResponseEntity.ok(ResponseDTO.<Boolean>builder()
-                .data(ourServicesService.save(dto))
-                .code(200)
-                .message("Successfully registered")
-                .build());
+        @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        @Operation(summary = "Save a new service",
+                description = "This method is used to register a new service in the system. Service details must be provided in the request body.")
+        public ResponseEntity<ResponseDTO<Boolean>> save(
+                @RequestParam("photo") MultipartFile photo,
+                @RequestPart("title") String title,
+                @RequestPart("description") String description,
+                @RequestPart("token") String token) throws IOException {
+
+            // Create DTO from multipart and request body
+            OurServicesSaveRequestDTO dto = new OurServicesSaveRequestDTO(photo, title, description, token);
+
+            // Call service to save
+            return ResponseEntity.ok(ResponseDTO.<Boolean>builder()
+                    .data(ourServicesService.save(dto))
+                    .code(200)
+                    .message("Successfully registered")
+                    .build());
+        }
+
+        @DeleteMapping(DELETE)
+        @Operation(summary = "Delete a service",
+                description = "Deletes a service from the system based on the provided services ID.")
+        public ResponseEntity<ResponseDTO<Boolean>> delete(@RequestBody OurServicesDeleteRequestDTO dto) {
+            return ResponseEntity.ok(ResponseDTO.<Boolean>builder()
+                    .data(ourServicesService.delete(dto))
+                    .code(200)
+                    .message("Service deleted successfully")
+                    .build());
+        }
+        @GetMapping("/{id}")
+        public HttpEntity<byte[]> getImage(@PathVariable Long id){
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setContentType(MediaType.IMAGE_JPEG);
+            return new ResponseEntity<byte[]>(ourServicesService.getOneImage(id), httpHeaders, HttpStatus.OK);
+        }
+
+        @GetMapping(FINDALL)
+        public List<OurServicesResponseDTO> getDocument() {
+            return ourServicesService.findAll();
+        }
     }
-
-
-    @DeleteMapping(DELETE)
-    @Operation(
-            summary = "Delete a services",
-            description = "Deletes a services from the system based on the provided services ID. " +
-                    "This action will remove the services from the database permanently, and it cannot be undone."
-    )
-    public ResponseEntity<ResponseDTO<Boolean>> delete(@RequestBody OurServicesDeleteRequestDTO dto) {
-        return ResponseEntity.ok(ResponseDTO.<Boolean>builder()
-                .data(ourServicesService.delete(dto))
-                .code(200)
-                .message("Services deleted successfully")
-                .build());
-    }
-
-
-
-    @GetMapping(FIND_ALL_BY_SERVICES_ID)
-    public ResponseEntity<ResponseDTO<OurServices>> getServiceById(@RequestParam Long ourServiceId) {
-        OurServices service = ourServicesService.findProjectById(ourServiceId);
-
-        return ResponseEntity.ok(ResponseDTO.<OurServices>builder()
-                .data(service)
-                .code(200)
-                .message("Service fetched successfully")
-                .build());
-    }
-
-
-
-    @GetMapping(FINDALL)
-    @Operation(
-            summary = "Retrieve All Services",
-            description = "Returns a list of all services. This endpoint fetches all the services stored in the system and returns them as a list of `Services` objects."
-    )
-    public ResponseEntity<List<OurServices>> findAll() {
-        List<OurServices> ourServices = ourServicesService.findAll();
-        return ResponseEntity.ok(ourServices);
-    }
-
-    @GetMapping("/get-user-info")
-    public ResponseEntity<ResponseDTO<String>> getUserInfo(@RequestParam Long authId) {
-        // authId kullanarak veriyi çekme işlemi yapılır.
-        String userInfo = ourServicesService.getUserFromToken(authId);
-
-        return ResponseEntity.ok(ResponseDTO.<String>builder()
-                .data(userInfo)  // getUserFromToken metodu String dönecekse, veriyi burada döndürüyorsunuz.
-                .code(200)
-                .message("Our Services updated successfully")
-                .build());
-    }
-
-}
