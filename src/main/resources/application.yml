@@ -1,11 +1,13 @@
 server:
   port: 9090
 spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/authDB
-    username: postgres
-    password: 1234
-    driver-class-name: org.postgresql.Driver
+  spring:
+    datasource:
+      url: jdbc:postgresql://dpg-ct87itpopnds73bu3920-a.oregon-postgres.render.com:5432/connectusauthdb
+      username: connectusauthdb_user
+      password: QkUuiVGArWwxb9HATS2vgtVTUmlnQBBb
+      driver-class-name: org.postgresql.Driver
+
   servlet:
     multipart:
       # Maksimum dosya boyutunu 10MB olarak ayarlıyoruz
