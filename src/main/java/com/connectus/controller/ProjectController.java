@@ -1,7 +1,6 @@
 package com.connectus.controller;
 import com.connectus.dto.request.*;
 import com.connectus.dto.response.ResponseDTO;
-import com.connectus.entity.OurServices;
 import com.connectus.entity.Project;
 import com.connectus.services.ProjectService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -84,7 +83,6 @@ public class ProjectController {
                 .build());
     }
 
-
     @GetMapping(FINDALL)
     @Operation(
             summary = "Retrieve All Services",
@@ -94,14 +92,6 @@ public class ProjectController {
         return ResponseEntity.ok(projects);
     }
 
-    @GetMapping("/get-user-info")
-    public ResponseEntity<ResponseDTO<String>> getUserInfo(@RequestParam Long authId) {
-        String userInfo = projectService.getUserFromToken(authId);
 
-        return ResponseEntity.ok(ResponseDTO.<String>builder()
-                .data(userInfo)
-                .message("User info retrieved successfully")
-                .build());
-    }
 }
 
