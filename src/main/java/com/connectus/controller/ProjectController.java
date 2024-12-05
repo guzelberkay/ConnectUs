@@ -54,20 +54,7 @@ public class ProjectController {
                 .build());
     }
 
-    @PutMapping(UPDATE)
-    @Operation(
-            summary = "Update an existing service",
-            description = "Updates an existing service in the system. The service ID must be provided, " +
-                    "and the fields to be updated (title, description, photo) can be supplied in the request body. " +
-                    "If any field is not provided, it will remain unchanged.")
-    public ResponseEntity<ResponseDTO<Boolean>> update(@RequestBody ProjectUpdateRequestDTO dto) {
-        Boolean result = projectService.update(dto);
-        return ResponseEntity.ok(ResponseDTO.<Boolean>builder()
-                .data(result)
-                .code(200)
-                .message("Service updated successfully")
-                .build());
-    }
+
     @GetMapping(FIND_ALL_BY_PROJECT_ID)
     @Operation(
             summary = "Find Project by ID",

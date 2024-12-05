@@ -14,8 +14,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -24,10 +26,11 @@ public class OurServicesService {
     private final OurServicesRepository ourServicesRepository;
     private final AuthRepository authRepository;
     private final JwtTokenManager jwtTokenManager;
-    private final S3Service s3Service;
 
-    @Value("${AWS_BUCKET_NAME}")
+    private final S3Service s3Service;
+    @Value("${aws.s3.buckets.customer}")
     private String bucketName;
+
 
     public Boolean save(OurServicesSaveRequestDTO dto) {
         Long authId = extractAuthIdFromToken(dto.token());
@@ -37,8 +40,11 @@ public class OurServicesService {
         String photoUrl = null;
         if (dto.photo() != null) {
             try {
-                photoUrl = s3Service.uploadPhoto(dto.photo());
-            } catch (Exception e) {
+
+                String fileKey = UUID.randomUUID().toString() + "_" + dto.photo().getOriginalFilename();
+
+                photoUrl = s3Service.putObject(bucketName, fileKey, dto.photo());
+            } catch (IOException e) {
                 throw new GeneralException(ErrorType.PHOTO_UPLOAD_FAILED);
             }
         }
@@ -52,6 +58,8 @@ public class OurServicesService {
         ourServicesRepository.save(ourServices);
         return true;
     }
+
+
 
     public String getUserFromToken(Long authid) {
         String token = String.valueOf(jwtTokenManager.createToken(authid));
@@ -68,69 +76,49 @@ public class OurServicesService {
 
         if (ourServices.getPhoto() != null) {
             try {
-                s3Service.deletePhoto(ourServices.getPhoto());
+                String photoKey = s3Service.extractS3KeyFromUrl(ourServices.getPhoto());
+                s3Service.deleteObject(bucketName, photoKey);
             } catch (Exception e) {
                 throw new GeneralException(ErrorType.PHOTO_DELETE_FAILED);
             }
         }
 
-        // Delete service from database
         ourServicesRepository.delete(ourServices);
         return true;
     }
 
-    public Boolean update(OurServicesUpdateRequestDTO dto) {
-        Long authId = extractAuthIdFromToken(dto.token());
-        Auth auth = authRepository.findById(authId)
-                .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
 
-        OurServices ourServices = ourServicesRepository.findById(dto.ourServicesId())
-                .orElseThrow(() -> new GeneralException(ErrorType.OURSERVICES_NOT_FOUND));
-
-        if (dto.title() != null) {
-            ourServices.setTitle(dto.title());
-        }
-        if (dto.description() != null) {
-            ourServices.setDescription(dto.description());
-        }
-        if (dto.photo() != null) {
-            try {
-                // If there's an existing photo, delete it first
-                if (ourServices.getPhoto() != null) {
-                    s3Service.deletePhoto(ourServices.getPhoto());
-                }
-
-                // Upload the new photo
-                String newPhotoUrl = s3Service.uploadPhoto(dto.photo());
-                ourServices.setPhoto(newPhotoUrl);
-            } catch (Exception e) {
-                throw new GeneralException(ErrorType.PHOTO_UPDATE_FAILED);
-            }
-        }
-
-        ourServicesRepository.save(ourServices);
-        return true;
-    }
 
     public String getPresignedUrl(String objectName) {
         try {
-            // Generate the pre-signed URL for the object
-            return s3Service.generatePresignedUrl(objectName);
+
+            String keyName = "photos/" + objectName;  // Örneğin, her fotoğraf 'photos/' klasöründe
+            return s3Service.createPresignedGetUrl(bucketName, keyName);  // Bucket adı burada direkt kullanılacak
         } catch (Exception e) {
-            throw new RuntimeException("Error generating pre-signed URL", e);
+            throw new RuntimeException("Error generating pre-signed URL for object: " + objectName, e);
         }
     }
+
 
     public List<OurServices> findAll() {
         List<OurServices> services = ourServicesRepository.findAll();
         services.forEach(service -> {
             if (service.getPhoto() != null) {
-                String presignedUrl = getPresignedUrl(service.getPhoto());
-                service.setPhoto(presignedUrl);
+                try {
+                    byte[] photoBytes = s3Service.getObject(bucketName, service.getPhoto());
+                    // Burada photoBytes'ı kullanabilirsiniz, örneğin bir dosya olarak kaydedebilirsiniz
+                    // Ama URL'yi set etmek için getPresignedUrl kullanmaya devam etmelisiniz
+                    String presignedUrl = getPresignedUrl(service.getPhoto());
+                    service.setPhoto(presignedUrl);
+                } catch (Exception e) {
+                    service.setPhoto("default-error-url.jpg");
+                }
             }
         });
         return services;
     }
+
+
 
     public OurServices findServiceById(Long ourServiceId) {
         OurServices ourServices = ourServicesRepository.findById(ourServiceId)

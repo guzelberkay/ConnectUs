@@ -1,118 +1,105 @@
 package com.connectus.services;
 
-import software.amazon.awssdk.core.ResponseInputStream;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.model.*;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+
+import com.connectus.exception.ErrorType;
+import com.connectus.exception.GeneralException;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
-import java.io.InputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.Duration;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class S3Service {
 
     private final S3Client s3Client;
-    private final S3Presigner s3Presigner;
-    private final String bucketName;
 
-    @Autowired
-    public S3Service(S3Client s3Client, S3Presigner s3Presigner, @Value("${aws.s3.bucket-name}") String bucketName) {
-        this.s3Client = s3Client;
-        this.s3Presigner = s3Presigner;
-        this.bucketName = bucketName;
+    public String putObject(String bucketName, String key, MultipartFile file) throws IOException {
+        byte[] fileBytes = file.getBytes();
 
-        // Ensure the bucket exists
-        try {
-            if (!s3Client.headBucket(HeadBucketRequest.builder().bucket(bucketName).build()).sdkHttpResponse().isSuccessful()) {
-                s3Client.createBucket(CreateBucketRequest.builder().bucket(bucketName).build());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Error checking or creating AWS S3 bucket", e);
+        PutObjectRequest objectRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .build();
+        s3Client.putObject(objectRequest, RequestBody.fromBytes(fileBytes));
+
+        return s3Client.utilities().getUrl(GetUrlRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .build()).toExternalForm();
+    }
+
+
+    public byte[] getObject(String bucketName, String key) {
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .build();
+
+        try (ResponseInputStream<GetObjectResponse> response = s3Client.getObject(getObjectRequest)) {
+            return response.readAllBytes();
+        } catch (SdkException | IOException e) {
+            throw new RuntimeException("Failed to retrieve object from S3", e);
         }
     }
 
-    // Upload photo with unique name
-    public String uploadPhoto(MultipartFile file) throws Exception {
-        String objectKey = "photos/" + System.currentTimeMillis() + "_" + file.getOriginalFilename();
-        try (InputStream is = file.getInputStream()) {
-            s3Client.putObject(PutObjectRequest.builder()
-                            .bucket(bucketName)
-                            .key(objectKey)
-                            .contentType(file.getContentType())
-                            .build(),
-                    RequestBody.fromInputStream(is, file.getSize()));
-        } catch (Exception e) {
-            throw new RuntimeException("File upload error", e);
-        }
-        return objectKey;
-    }
 
-    // Delete photo
-    public void deletePhoto(String objectKey) throws Exception {
+    public void deleteObject(String bucketName, String key) {
         try {
-            s3Client.deleteObject(DeleteObjectRequest.builder()
+            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
                     .bucket(bucketName)
-                    .key(objectKey)
-                    .build());
-        } catch (Exception e) {
-            throw new RuntimeException("Error deleting photo", e);
-        }
-    }
-
-    // Generate pre-signed URL
-    public String generatePresignedUrl(String objectKey) {
-        try {
-            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(objectKey)
+                    .key(key)
                     .build();
 
-            // Generate presigned URL valid for 1 hour
-            PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest -> presignRequest
-                    .getObjectRequest(getObjectRequest)
-                    .signatureDuration(Duration.ofHours(1))
-            );
+            s3Client.deleteObject(deleteObjectRequest);
 
-            return presignedRequest.url().toString();
         } catch (Exception e) {
-            throw new RuntimeException("Error generating pre-signed URL", e);
+
+        }
+    }
+    public String extractS3KeyFromUrl(String url) {
+
+        try {
+            URL photoUrl = new URL(url);
+            String path = photoUrl.getPath();
+            return path.startsWith("/") ? path.substring(1) : path;  // Remove leading slash
+        } catch (MalformedURLException e) {
+            throw new GeneralException(ErrorType.PHOTO_DELETE_FAILED);
         }
     }
 
-    // List all photos
-    public List<S3Object> listPhotos() throws Exception {
-        try {
-            ListObjectsV2Response response = s3Client.listObjectsV2(ListObjectsV2Request.builder()
+    public String createPresignedGetUrl(String bucketName, String keyName) {
+        try (S3Presigner presigner = S3Presigner.create()) {
+            GetObjectRequest objectRequest = GetObjectRequest.builder()
                     .bucket(bucketName)
-                    .build());
-            return response.contents().stream()
-                    .filter(item -> item.key().startsWith("photos/"))
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            throw new RuntimeException("Error listing S3 objects", e);
-        }
-    }
-
-    // Get photo (returns InputStream)
-    public InputStream getPhoto(String objectKey) throws Exception {
-        try {
-            GetObjectRequest getObjectRequest = GetObjectRequest.builder()
-                    .bucket(bucketName)
-                    .key(objectKey)
+                    .key(keyName)
                     .build();
 
-            ResponseInputStream<GetObjectResponse> responseStream = s3Client.getObject(getObjectRequest);
-            return responseStream;
-        } catch (Exception e) {
-            throw new RuntimeException("Error getting photo", e);
+            GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                    .signatureDuration(Duration.ofDays(7))
+                    .getObjectRequest(objectRequest)
+                    .build();
+
+
+            PresignedGetObjectRequest presignedRequest = presigner.presignGetObject(presignRequest);
+
+            return presignedRequest.url().toExternalForm();
+        } catch (SdkException e) {
+
+            throw new GeneralException(ErrorType.PHOTO_URL_GENERATION_FAILED);
         }
     }
 }

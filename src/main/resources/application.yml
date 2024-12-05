@@ -2,10 +2,15 @@ server:
   port: 9090
 spring:
   datasource:
-    url: jdbc:postgresql://dpg-ct87itpopnds73bu3920-a.oregon-postgres.render.com:5432/connectusauthdb
-    username: connectusauthdb_user
-    password: QkUuiVGArWwxb9HATS2vgtVTUmlnQBBb
+    url: jdbc:postgresql://localhost:5432/authDB
+    username: postgres
+    password: 1234
     driver-class-name: org.postgresql.Driver
+  servlet:
+    multipart:
+      # Maksimum dosya boyutunu 10MB olarak ayarlıyoruz
+      max-file-size: 10MB
+      max-request-size: 10MB
 
   jpa:
     hibernate:
@@ -28,10 +33,10 @@ connectus:
     issuer: ${JAVA_14_ISSUER:defaultIssuer}
 
 aws:
-  region: ${AWS_REGION}
+  region: eu-north-1
   s3:
     buckets:
-      customer: ${AWS_BUCKET_NAME}
+      customer: connect-us-storage-bucket
   credentials:
-    access-key-id: ${AWS_ACCESS_KEY_ID}
-    secret-access-key: ${AWS_SECRET_ACCESS_KEY}
+    access-key-id: AKIA4DMVQ5NBTWUYA374
+    secret-access-key: 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

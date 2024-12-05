@@ -54,20 +54,7 @@ public class OurServicesController {
                 .build());
     }
 
-    @PutMapping(UPDATE)
-    @Operation(
-            summary = "Update an existing services",
-            description = "Updates an existing services in the system. The services ID must be provided, " +
-                    "and the fields to be updated (title, description, photo) can be supplied in the request body. " +
-                    "If any field is not provided, it will remain unchanged."
-    )
-    public ResponseEntity<ResponseDTO<Boolean>> update(@RequestBody OurServicesUpdateRequestDTO dto) {
-        return ResponseEntity.ok(ResponseDTO.<Boolean>builder()
-                .data(ourServicesService.update(dto))
-                .code(200)
-                .message("Our Services updated successfully")
-                .build());
-    }
+
 
     @GetMapping(FIND_ALL_BY_SERVICES_ID)
     public ResponseEntity<ResponseDTO<OurServices>> getServiceById(@RequestParam Long ourServiceId) {

@@ -1,6 +1,7 @@
 package com.connectus.services;
 
 import com.connectus.dto.request.*;
+import com.connectus.entity.OurServices;
 import com.connectus.entity.Project;
 import com.connectus.exception.GeneralException;
 import com.connectus.exception.ErrorType;
@@ -10,11 +11,9 @@ import com.connectus.utility.JwtTokenManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.services.s3.model.GetObjectRequest;
-import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
-import java.time.Duration;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +23,7 @@ public class ProjectService {
     private final JwtTokenManager jwtTokenManager;
     private final S3Service s3Service;
 
-    @Value("${AWS_BUCKET_NAME}")
+    @Value("${aws.s3.buckets.customer}")
     private String bucketName;
 
     public Boolean save(ProjectSaveRequestDTO dto) {
@@ -36,7 +35,8 @@ public class ProjectService {
         String photoUrl = null;
         if (dto.photo() != null) {
             try {
-                photoUrl = s3Service.uploadPhoto(dto.photo());
+                String fileKey = UUID.randomUUID().toString() + "_" + dto.photo().getOriginalFilename();
+                photoUrl = s3Service.putObject(bucketName, fileKey, dto.photo());
             } catch (Exception e) {
                 throw new GeneralException(ErrorType.PHOTO_UPLOAD_FAILED);
             }
@@ -63,7 +63,8 @@ public class ProjectService {
 
         if (project.getPhoto() != null) {
             try {
-                s3Service.deletePhoto(project.getPhoto());
+                String photoKey = s3Service.extractS3KeyFromUrl(project.getPhoto());
+                s3Service.deleteObject(bucketName, photoKey);
             } catch (Exception e) {
                 throw new GeneralException(ErrorType.PHOTO_DELETE_FAILED);
             }
@@ -73,51 +74,32 @@ public class ProjectService {
         return true;
     }
 
-    public Boolean update(ProjectUpdateRequestDTO dto) {
-        Long authId = extractAuthIdFromToken(dto.token());
-
-        authRepository.findById(authId)
-                .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
-
-        Project project = projectRepository.findById(dto.projectId())
-                .orElseThrow(() -> new GeneralException(ErrorType.PROJECT_NOT_FOUND));
-
-        if (dto.title() != null) {
-            project.setTitle(dto.title());
-        }
-        if (dto.description() != null) {
-            project.setDescription(dto.description());
-        }
-        if (dto.photo() != null) {
-            try {
-                if (project.getPhoto() != null) {
-                    s3Service.deletePhoto(project.getPhoto());
-                }
-
-                String newPhotoUrl = s3Service.uploadPhoto(dto.photo());
-                project.setPhoto(newPhotoUrl);
-            } catch (Exception e) {
-                throw new GeneralException(ErrorType.PHOTO_UPDATE_FAILED);
-            }
-        }
-
-        projectRepository.save(project);
-        return true;
-    }
 
     public String getPresignedUrl(String objectName) {
-        return s3Service.generatePresignedUrl(objectName);
+        try {
+
+            String keyName = "photos/" + objectName;  // Örneğin, her fotoğraf 'photos/' klasöründe
+            return s3Service.createPresignedGetUrl(bucketName, keyName);  // Bucket adı burada direkt kullanılacak
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating pre-signed URL for object: " + objectName, e);
+        }
     }
 
     public List<Project> findAll() {
-        List<Project> projects = projectRepository.findAll();
-        projects.forEach(project -> {
-            if (project.getPhoto() != null) {
-                String presignedUrl = getPresignedUrl(project.getPhoto());
-                project.setPhoto(presignedUrl);
+        List<Project> services = projectRepository.findAll();
+        services.forEach(service -> {
+            if (service.getPhoto() != null) {
+                try {
+                    byte[] photoBytes = s3Service.getObject(bucketName, service.getPhoto());
+
+                    String presignedUrl = getPresignedUrl(service.getPhoto());
+                    service.setPhoto(presignedUrl);
+                } catch (Exception e) {
+                    service.setPhoto("default-error-url.jpg");
+                }
             }
         });
-        return projects;
+        return services;
     }
 
     public Project findProjectById(Long projectId) {
