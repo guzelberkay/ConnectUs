@@ -10,9 +10,6 @@ import com.connectus.exception.GeneralException;
 import com.connectus.repository.AuthRepository;
 import com.connectus.repository.OurServicesRepository;
 import com.connectus.utility.JwtTokenManager;
-import io.minio.GetPresignedObjectUrlArgs;
-import io.minio.MinioClient;
-import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -28,16 +25,15 @@ public class OurServicesService {
     private final AuthRepository authRepository;
     private final JwtTokenManager jwtTokenManager;
     private final S3Service s3Service;
-    private final MinioClient minioClient;
 
-    @Value("${minio.bucket-name}")
+    @Value("${AWS_BUCKET_NAME}")
     private String bucketName;
 
     public Boolean save(OurServicesSaveRequestDTO dto) {
-
         Long authId = extractAuthIdFromToken(dto.token());
         Auth auth = authRepository.findById(authId)
                 .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
+
         String photoUrl = null;
         if (dto.photo() != null) {
             try {
@@ -46,6 +42,7 @@ public class OurServicesService {
                 throw new GeneralException(ErrorType.PHOTO_UPLOAD_FAILED);
             }
         }
+
         OurServices ourServices = OurServices.builder()
                 .title(dto.title())
                 .description(dto.description())
@@ -53,11 +50,8 @@ public class OurServicesService {
                 .build();
 
         ourServicesRepository.save(ourServices);
-
         return true;
     }
-
-    private static final String SECRET_KEY = "secret";
 
     public String getUserFromToken(Long authid) {
         String token = String.valueOf(jwtTokenManager.createToken(authid));
@@ -65,16 +59,12 @@ public class OurServicesService {
     }
 
     public Boolean delete(OurServicesDeleteRequestDTO dto) {
-
-
         Long authId = extractAuthIdFromToken(dto.token());
         Auth auth = authRepository.findById(authId)
                 .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
 
-
         OurServices ourServices = ourServicesRepository.findById(dto.ourServicesId())
                 .orElseThrow(() -> new GeneralException(ErrorType.OURSERVICES_NOT_FOUND));
-
 
         if (ourServices.getPhoto() != null) {
             try {
@@ -86,18 +76,14 @@ public class OurServicesService {
 
         // Delete service from database
         ourServicesRepository.delete(ourServices);
-
         return true;
     }
 
-
     public Boolean update(OurServicesUpdateRequestDTO dto) {
-
         Long authId = extractAuthIdFromToken(dto.token());
         Auth auth = authRepository.findById(authId)
                 .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
 
-        // Find the service to update
         OurServices ourServices = ourServicesRepository.findById(dto.ourServicesId())
                 .orElseThrow(() -> new GeneralException(ErrorType.OURSERVICES_NOT_FOUND));
 
@@ -109,10 +95,12 @@ public class OurServicesService {
         }
         if (dto.photo() != null) {
             try {
+                // If there's an existing photo, delete it first
                 if (ourServices.getPhoto() != null) {
                     s3Service.deletePhoto(ourServices.getPhoto());
                 }
 
+                // Upload the new photo
                 String newPhotoUrl = s3Service.uploadPhoto(dto.photo());
                 ourServices.setPhoto(newPhotoUrl);
             } catch (Exception e) {
@@ -120,22 +108,16 @@ public class OurServicesService {
             }
         }
 
-
         ourServicesRepository.save(ourServices);
-
         return true;
     }
 
     public String getPresignedUrl(String objectName) {
         try {
-            return minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
-                    .method(Method.GET)
-                    .bucket(bucketName)
-                    .object(objectName)
-                    .expiry(60 * 60) // 1 saat geçerli
-                    .build());
+            // Generate the pre-signed URL for the object
+            return s3Service.generatePresignedUrl(objectName);
         } catch (Exception e) {
-            throw new RuntimeException("Pre-signed URL oluşturulurken hata oluştu", e);
+            throw new RuntimeException("Error generating pre-signed URL", e);
         }
     }
 
@@ -149,22 +131,18 @@ public class OurServicesService {
         });
         return services;
     }
+
     public OurServices findServiceById(Long ourServiceId) {
-        // OurServices doğrulaması
         OurServices ourServices = ourServicesRepository.findById(ourServiceId)
                 .orElseThrow(() -> new GeneralException(ErrorType.OURSERVICES_NOT_FOUND));
 
-        // Fotoğraf için presigned URL oluşturulur
         if (ourServices.getPhoto() != null) {
             String presignedUrl = getPresignedUrl(ourServices.getPhoto());
             ourServices.setPhoto(presignedUrl);
         }
 
-        // Tüm bilgileri döndür
         return ourServices;
     }
-
-
 
     private Long extractAuthIdFromToken(String token) {
         Optional<Long> authIdOptional = jwtTokenManager.getAuthIdFromToken(token);

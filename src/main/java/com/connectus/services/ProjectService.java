@@ -1,22 +1,20 @@
 package com.connectus.services;
 
 import com.connectus.dto.request.*;
-import com.connectus.entity.OurServices;
 import com.connectus.entity.Project;
 import com.connectus.exception.GeneralException;
 import com.connectus.exception.ErrorType;
 import com.connectus.repository.AuthRepository;
 import com.connectus.repository.ProjectRepository;
 import com.connectus.utility.JwtTokenManager;
-import io.minio.GetPresignedObjectUrlArgs;
-import io.minio.MinioClient;
-import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
+import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -25,9 +23,8 @@ public class ProjectService {
     private final AuthRepository authRepository;
     private final JwtTokenManager jwtTokenManager;
     private final S3Service s3Service;
-    private final MinioClient minioClient;
 
-    @Value("${minio.bucket-name}")
+    @Value("${AWS_BUCKET_NAME}")
     private String bucketName;
 
     public Boolean save(ProjectSaveRequestDTO dto) {
@@ -107,54 +104,34 @@ public class ProjectService {
         projectRepository.save(project);
         return true;
     }
+
     public String getPresignedUrl(String objectName) {
-        try {
-            return minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
-                    .method(Method.GET)
-                    .bucket(bucketName)
-                    .object(objectName)
-                    .expiry(60 * 60)
-                    .build());
-        } catch (Exception e) {
-            throw new RuntimeException("Pre-signed URL oluşturulurken hata oluştu", e);
-        }
+        return s3Service.generatePresignedUrl(objectName);
     }
 
     public List<Project> findAll() {
-        List<Project> services = projectRepository.findAll();
-        services.forEach(service -> {
-            if (service.getPhoto() != null) {
-                String presignedUrl = getPresignedUrl(service.getPhoto());
-                service.setPhoto(presignedUrl);
+        List<Project> projects = projectRepository.findAll();
+        projects.forEach(project -> {
+            if (project.getPhoto() != null) {
+                String presignedUrl = getPresignedUrl(project.getPhoto());
+                project.setPhoto(presignedUrl);
             }
         });
-        return services;
+        return projects;
     }
-    public Project findProjectById(Long projectId) {
 
+    public Project findProjectById(Long projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new GeneralException(ErrorType.PROJECT_NOT_FOUND));
 
-        // Fotoğraf için presigned URL oluşturulur
         if (project.getPhoto() != null) {
             String presignedUrl = getPresignedUrl(project.getPhoto());
             project.setPhoto(presignedUrl);
         }
 
-        // Tüm bilgileri döndür
         return project;
     }
 
-
-
-    public String getUserFromToken(Long authId) {
-        Optional<Long> optionalAuthId = jwtTokenManager.getAuthIdFromToken(authId.toString());
-        if (optionalAuthId.isPresent()) {
-            return String.valueOf(jwtTokenManager.createToken(optionalAuthId.get()));
-        } else {
-            throw new GeneralException(ErrorType.TOKEN_INVALID);
-        }
-    }
     private Long extractAuthIdFromToken(String token) {
         return jwtTokenManager.getAuthIdFromToken(token)
                 .orElseThrow(() -> new GeneralException(ErrorType.TOKEN_INVALID));
