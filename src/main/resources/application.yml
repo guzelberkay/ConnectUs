@@ -2,8 +2,10 @@ server:
   port: 9090
 spring:
   datasource:
-    url: postgresql://connectusauthdb_user:QkUuiVGArWwxb9HATS2vgtVTUmlnQBBb@dpg-ct87itpopnds73bu3920-a.oregon-postgres.render.com/connectusauthdb
     driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${POSTGRE_URL}
+    username: ${POSTGRE_USERNAME}
+    password: ${POSTGRE_PASSWORD}
 
   servlet:
     multipart:
