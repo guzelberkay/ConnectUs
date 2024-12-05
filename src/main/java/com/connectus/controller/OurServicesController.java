@@ -58,7 +58,7 @@ public class OurServicesController {
 
     @GetMapping(FIND_ALL_BY_SERVICES_ID)
     public ResponseEntity<ResponseDTO<OurServices>> getServiceById(@RequestParam Long ourServiceId) {
-        OurServices service = ourServicesService.findServiceById(ourServiceId);
+        OurServices service = ourServicesService.findProjectById(ourServiceId);
 
         return ResponseEntity.ok(ResponseDTO.<OurServices>builder()
                 .data(service)

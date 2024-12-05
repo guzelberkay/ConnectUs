@@ -11,7 +11,9 @@ import com.connectus.utility.JwtTokenManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.services.s3.S3Client;
 
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,6 +24,8 @@ public class ProjectService {
     private final AuthRepository authRepository;
     private final JwtTokenManager jwtTokenManager;
     private final S3Service s3Service;
+    private final S3Client s3Client;
+
 
     @Value("${aws.s3.buckets.customer}")
     private String bucketName;
@@ -73,29 +77,15 @@ public class ProjectService {
         projectRepository.delete(project);
         return true;
     }
-
-
-    public String getPresignedUrl(String objectName) {
-        try {
-
-            String keyName = "photos/" + objectName;  // Örneğin, her fotoğraf 'photos/' klasöründe
-            return s3Service.createPresignedGetUrl(bucketName, keyName);  // Bucket adı burada direkt kullanılacak
-        } catch (Exception e) {
-            throw new RuntimeException("Error generating pre-signed URL for object: " + objectName, e);
-        }
-    }
-
     public List<Project> findAll() {
         List<Project> services = projectRepository.findAll();
         services.forEach(service -> {
             if (service.getPhoto() != null) {
                 try {
-                    byte[] photoBytes = s3Service.getObject(bucketName, service.getPhoto());
-
-                    String presignedUrl = getPresignedUrl(service.getPhoto());
+                    String presignedUrl = s3Service.createPresignedGetUrl(bucketName, service.getPhoto());
                     service.setPhoto(presignedUrl);
                 } catch (Exception e) {
-                    service.setPhoto("default-error-url.jpg");
+                    service.setPhoto("default-error-url.jpg"); // Hata durumunda varsayılan bir görsel URL'si
                 }
             }
         });
@@ -107,7 +97,7 @@ public class ProjectService {
                 .orElseThrow(() -> new GeneralException(ErrorType.PROJECT_NOT_FOUND));
 
         if (project.getPhoto() != null) {
-            String presignedUrl = getPresignedUrl(project.getPhoto());
+            String presignedUrl = s3Service.createPresignedGetUrl(bucketName, project.getPhoto());
             project.setPhoto(presignedUrl);
         }
 

@@ -1,10 +1,10 @@
 package com.connectus.services;
 
 
+import com.connectus.dto.response.UrlResponseDTO;
 import com.connectus.exception.ErrorType;
 import com.connectus.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.ResponseInputStream;
@@ -26,7 +26,6 @@ import java.time.Duration;
 public class S3Service {
 
     private final S3Client s3Client;
-
     public String putObject(String bucketName, String key, MultipartFile file) throws IOException {
         byte[] fileBytes = file.getBytes();
 
@@ -70,6 +69,7 @@ public class S3Service {
 
         }
     }
+
     public String extractS3KeyFromUrl(String url) {
 
         try {
@@ -83,23 +83,25 @@ public class S3Service {
 
     public String createPresignedGetUrl(String bucketName, String keyName) {
         try (S3Presigner presigner = S3Presigner.create()) {
+
             GetObjectRequest objectRequest = GetObjectRequest.builder()
                     .bucket(bucketName)
                     .key(keyName)
                     .build();
 
             GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
-                    .signatureDuration(Duration.ofDays(7))
+                    .signatureDuration(Duration.ofDays(7))  // The URL will expire in 1 day .
                     .getObjectRequest(objectRequest)
                     .build();
 
-
             PresignedGetObjectRequest presignedRequest = presigner.presignGetObject(presignRequest);
-
             return presignedRequest.url().toExternalForm();
-        } catch (SdkException e) {
-
-            throw new GeneralException(ErrorType.PHOTO_URL_GENERATION_FAILED);
         }
     }
+        public UrlResponseDTO getPresignedUrl (String fileName){
+            String key = "photos/%s".formatted(fileName);
+            String presignedGetUrl = createPresignedGetUrl("connect-us-storage-bucket", key);
+            return new UrlResponseDTO(presignedGetUrl);
+        }
+
 }

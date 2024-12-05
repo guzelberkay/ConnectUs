@@ -5,6 +5,7 @@ import com.connectus.dto.request.OurServicesSaveRequestDTO;
 import com.connectus.dto.request.OurServicesUpdateRequestDTO;
 import com.connectus.entity.Auth;
 import com.connectus.entity.OurServices;
+import com.connectus.entity.Project;
 import com.connectus.exception.ErrorType;
 import com.connectus.exception.GeneralException;
 import com.connectus.repository.AuthRepository;
@@ -89,49 +90,32 @@ public class OurServicesService {
 
 
 
-    public String getPresignedUrl(String objectName) {
-        try {
-
-            String keyName = "photos/" + objectName;  // Örneğin, her fotoğraf 'photos/' klasöründe
-            return s3Service.createPresignedGetUrl(bucketName, keyName);  // Bucket adı burada direkt kullanılacak
-        } catch (Exception e) {
-            throw new RuntimeException("Error generating pre-signed URL for object: " + objectName, e);
-        }
-    }
-
-
     public List<OurServices> findAll() {
         List<OurServices> services = ourServicesRepository.findAll();
         services.forEach(service -> {
             if (service.getPhoto() != null) {
                 try {
-                    byte[] photoBytes = s3Service.getObject(bucketName, service.getPhoto());
-                    // Burada photoBytes'ı kullanabilirsiniz, örneğin bir dosya olarak kaydedebilirsiniz
-                    // Ama URL'yi set etmek için getPresignedUrl kullanmaya devam etmelisiniz
-                    String presignedUrl = getPresignedUrl(service.getPhoto());
+                    String presignedUrl = s3Service.createPresignedGetUrl(bucketName, service.getPhoto());
                     service.setPhoto(presignedUrl);
                 } catch (Exception e) {
-                    service.setPhoto("default-error-url.jpg");
+                    service.setPhoto("default-error-url.jpg"); // Hata durumunda varsayılan bir görsel URL'si
                 }
             }
         });
         return services;
     }
 
-
-
-    public OurServices findServiceById(Long ourServiceId) {
+    public OurServices findProjectById(Long ourServiceId) {
         OurServices ourServices = ourServicesRepository.findById(ourServiceId)
-                .orElseThrow(() -> new GeneralException(ErrorType.OURSERVICES_NOT_FOUND));
+                .orElseThrow(() -> new GeneralException(ErrorType.PROJECT_NOT_FOUND));
 
         if (ourServices.getPhoto() != null) {
-            String presignedUrl = getPresignedUrl(ourServices.getPhoto());
+            String presignedUrl = s3Service.createPresignedGetUrl(bucketName, ourServices.getPhoto());
             ourServices.setPhoto(presignedUrl);
         }
 
         return ourServices;
     }
-
     private Long extractAuthIdFromToken(String token) {
         Optional<Long> authIdOptional = jwtTokenManager.getAuthIdFromToken(token);
         if (authIdOptional.isPresent()) {

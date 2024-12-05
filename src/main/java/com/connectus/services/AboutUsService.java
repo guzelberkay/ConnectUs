@@ -10,6 +10,7 @@ import com.connectus.repository.AuthRepository;
 import com.connectus.utility.JwtTokenManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -20,14 +21,9 @@ public class AboutUsService {
     private final AboutUsRepository aboutUsRepository;
     private final JwtTokenManager jwtTokenManager;
 
+    @Transactional
     public Boolean saveOrUpdate(AboutUsRequestDTO dto) {
-        Long authId = extractAuthIdFromToken(dto.token());
 
-        // Kullanıcının doğrulamasını kontrol et
-        authRepository.findById(authId)
-                .orElseThrow(() -> new GeneralException(ErrorType.AUTH_NOT_FOUND));
-
-        // "Hakkımızda" bilgisi kontrolü
         Optional<AboutUs> optionalAboutUs = aboutUsRepository.findFirstByOrderByIdAsc();
 
         AboutUs aboutUs;
@@ -44,21 +40,13 @@ public class AboutUsService {
             }
         }
 
-        // Veriyi kaydet
         aboutUsRepository.save(aboutUs);
         return true;
     }
 
     public AboutUs find() {
-        return aboutUsRepository.findFirstByOrderByIdAsc()
-                .orElseThrow(() -> new RuntimeException("Hakkımızda bilgisi bulunamadı!"));
+        return aboutUsRepository.findAll().get(0);
+
     }
 
-    private Long extractAuthIdFromToken(String token) {
-        Optional<Long> authIdOptional = jwtTokenManager.getAuthIdFromToken(token);
-        if (authIdOptional.isEmpty()) {
-            throw new RuntimeException("AuthId could not be extracted from token");
-        }
-        return authIdOptional.get();
-    }
 }
